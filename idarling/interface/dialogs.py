@@ -274,6 +274,11 @@ class SaveDialog(OpenDialog):
 
         # Get all the information we need and sent it to the server
         hash = ida_nalt.retrieve_input_file_md5().lower()
+        # Remove the trailing null byte, if exists
+        if hash.endswith(b'\x00'):
+          hash = hash[0:-1]
+        # This decode is safe, because we have an hash in hex format
+        hash = hash.decode('utf-8')
         file = ida_nalt.get_root_filename()
         type = ida_loader.get_file_type_name()
         date_format = "%Y/%m/%d %H:%M"
@@ -294,6 +299,9 @@ class SaveDialog(OpenDialog):
     def _refresh_projects(self):
         super(SaveDialog, self)._refresh_projects()
         hash = ida_nalt.retrieve_input_file_md5().lower()
+        if hash.endswith(b'\x00'):
+            hash = hash[0:-1]
+        hash = hash.decode('utf-8')
         for row in range(self._projects_table.rowCount()):
             item = self._projects_table.item(row, 0)
             project = item.data(Qt.UserRole)
