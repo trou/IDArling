@@ -88,14 +88,15 @@ class Painter(QObject):
         # There is a bug in IDA: with a huge number of segments, all the navbar
         # is colored with the user color. This will be resolved in IDA 7.2.
         cursors = self._plugin.config["cursors"]
-        if cursors["navbar"]:
-            for user in self._plugin.core.get_users().values():
-                # Cursor color
-                if ea - nbytes * 2 <= user["ea"] <= ea + nbytes * 2:
-                    return long(user["color"])
-                # Cursor borders
-                if ea - nbytes * 4 <= user["ea"] <= ea + nbytes * 4:
-                    return long(0)
+        # commented as error while loading in IDA >= 7.3
+        #if cursors["navbar"]:
+        #    for user in self._plugin.core.get_users().values():
+        #        # Cursor color
+        #        if ea - nbytes * 2 <= user["ea"] <= ea + nbytes * 2:
+        #            return long(user["color"])
+        #        # Cursor borders
+        #        if ea - nbytes * 4 <= user["ea"] <= ea + nbytes * 4:
+        #            return long(0)
         orig = ida_kernwin.call_nav_colorizer(
             self._ida_nav_colorizer, ea, nbytes
         )
