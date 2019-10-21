@@ -146,7 +146,8 @@ class OpenDialog(QDialog):
 
     def _projects_listed(self, reply):
         """Called when the projects list is received."""
-        self._projects = reply.projects
+        self._projects = sorted(reply.projects, key=lambda x: x.name) # sort project by name
+        #self._projects = sorted(reply.projects, key=lambda x: x.date, reverse=True) # sort project by reverse date
         self._refresh_projects()
 
     def _refresh_projects(self):
@@ -173,7 +174,7 @@ class OpenDialog(QDialog):
 
     def _databases_listed(self, reply):
         """Called when the databases list is received."""
-        self._databases = reply.databases
+        self._databases = sorted(reply.databases, key=lambda x: x.date, reverse=True) # sort databases by reverse date
         self._refresh_databases()
 
     def _refresh_databases(self):
