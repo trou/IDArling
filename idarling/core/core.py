@@ -146,7 +146,7 @@ class Core(Module):
 
         class IDPHooksCore(ida_idp.IDP_Hooks):
             def ev_get_bg_color(self, color, ea):
-                core._plugin.logger.trace("Get bg color hook")
+                core._plugin.logger.debug("Get bg color hook")
                 value = core._plugin.interface.painter.get_bg_color(ea)
                 if value is not None:
                     ctypes.c_uint.from_address(long(color)).value = value
