@@ -126,6 +126,19 @@ class DownloadFile(ParentCommand):
     class Reply(IReply, Container, Command):
         pass
 
+class RenameProject(ParentCommand):
+    __command__ = "rename_project"
+
+    class Query(IQuery, DefaultCommand):
+        def __init__(self, project, database, old_name, new_name):
+            super(RenameProject.Query, self).__init__()
+            self.project = project
+            self.database = database
+            self.old_name = old_name
+            self.new_name = new_name
+
+    class Reply(IReply, Container, Command):
+        pass
 
 class JoinSession(DefaultCommand):
     __command__ = "join_session"

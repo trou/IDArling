@@ -18,6 +18,7 @@ import ssl
 from .commands import (
     CreateDatabase,
     CreateProject,
+    RenameProject,
     DownloadFile,
     InviteToLocation,
     JoinSession,
@@ -81,6 +82,7 @@ class ServerClient(ClientSocket):
             CreateDatabase.Query: self._handle_create_database,
             UpdateFile.Query: self._handle_upload_file,
             DownloadFile.Query: self._handle_download_file,
+            RenameProject.Query: self._handle_rename_project,
             JoinSession: self._handle_join_session,
             LeaveSession: self._handle_leave_session,
             UpdateLocation: self._handle_update_location,
@@ -153,6 +155,20 @@ class ServerClient(ClientSocket):
         else:
             return False
         return True
+
+    def _handle_rename_project(self, query):
+        projects = self.parent().storage.select_projects()
+        for project in projects:
+            # XXX _ need to make sure the new name doesn't already exit
+            if project.name == query.old_name:
+                # XXX - needs some sort of lock to prevent other stuff using it while
+                # renaming
+                self._update_project_name(query.old_name, query.new_name)
+                self._update_database_project(query.old_name, query.new_name)
+                self._update_events_project(query.old_name, query.new_name)
+
+        # XXX - update with some sort of success reply
+        self.send_packet(ListProjects.Reply(query, projects))
 
     def _handle_list_projects(self, query):
         projects = self.parent().storage.select_projects()
