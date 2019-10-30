@@ -165,10 +165,9 @@ class Storage(object):
     def _update(self, table, field, old_value, new_value, limit=None):
         """Update the field in a table matching the given values."""
         c = self._conn.cursor()
-        sql = "update {} set {} = {} where {} = {}".format(table, field,
-                new_value, field, old_value)
+        sql = "update {} set {} = ? where {} = ?".format(table, field, field)
         sql += " limit {};".format(limit) if limit else ";"
-        c.execute(sql, list(fields.values()))
+        c.execute(sql, [new_value, old_value])
         return c.fetchall()
 
     def _insert(self, table, fields):

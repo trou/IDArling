@@ -157,15 +157,30 @@ class ServerClient(ClientSocket):
         return True
 
     def _handle_rename_project(self, query):
+        self._logger.info("Got rename project request")
         projects = self.parent().storage.select_projects()
         for project in projects:
-            # XXX _ need to make sure the new name doesn't already exit
+            if project.name == query.new_name:
+                self._logger.error("Attempt to rename project to existing name")
+                return
+
+        for project in projects:
             if project.name == query.old_name:
                 # XXX - needs some sort of lock to prevent other stuff using it while
                 # renaming
-                self._update_project_name(query.old_name, query.new_name)
-                self._update_database_project(query.old_name, query.new_name)
-                self._update_events_project(query.old_name, query.new_name)
+                self.parent().storage.update_project_name(query.old_name, query.new_name)
+                self.parent().storage.update_database_project(query.old_name, query.new_name)
+                self.parent().storage.update_events_project(query.old_name, query.new_name)
+
+                # We just changed the table entries so be sure to use new names 
+                # for queries
+                databases = self.parent().storage.select_databases(query.new_name)
+                for database in databases:
+                    old_file_name = "%s_%s.idb" % (query.old_name, database.name)
+                    new_file_name = "%s_%s.idb" % (query.new_name, database.name)
+                    old_file_path = self.parent().server_file(old_file_name)
+                    new_file_path = self.parent().server_file(new_file_name)
+                    os.rename(old_file_path, new_file_path)
 
         # XXX - update with some sort of success reply
         self.send_packet(ListProjects.Reply(query, projects))

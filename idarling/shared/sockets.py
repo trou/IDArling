@@ -246,8 +246,8 @@ class ClientSocket(QObject):
                 line = line.encode("utf-8") + b"\n"
             except Exception as e:
                 msg = "Invalid packet being sent: %s" % self._write_packet
-                self._logger.warning(msg)
-                self._logger.exception(e)
+                self._logger.warning(msg + "\n")
+                self._logger.exception(e + "\n")
                 return
 
             # Write the container's content

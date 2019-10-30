@@ -44,6 +44,7 @@ from PyQt5.QtWidgets import (
 from ..shared.commands import (
     CreateDatabase,
     CreateProject,
+    RenameProject,
     ListDatabases,
     ListProjects,
     UpdateUserColor,
@@ -147,7 +148,7 @@ class OpenDialog(QDialog):
         # XXX - Make it clickable only after project is selected
         self._rename_project_button = QPushButton("Rename Project", buttons_widget)
         self._rename_project_button.setEnabled(False)
-        self._rename_project_button.clicked.connect(self._rename_project)
+        self._rename_project_button.clicked.connect(self._rename_project_button_clicked)
 
         # Place buttons onto UI
         buttons_layout.addWidget(self._rename_project_button)
@@ -222,13 +223,22 @@ class OpenDialog(QDialog):
     def _database_double_clicked(self):
         self.accept()
 
-    def _rename_project(self):
-        # Make sure some project is clicked
-        project = self._projects_table.selectedItems()[0].data(Qt.UserRole)
-        # Pop-up a window to enter the new project name
-        # Read the result
+    def _rename_project_button_clicked(self, _):
+        dialog = RenameProjectDialog(self._plugin, "Rename project")
+        dialog.accepted.connect(partial(self._rename_project_dialog_accepted, dialog))
+        dialog.exec_()
+
+    def _rename_project_dialog_accepted(self, dialog):
+        old_name = self._projects_table.selectedItems()[0].data(Qt.UserRole).name
+        new_name = dialog.get_result()
+        self._plugin.logger.info("Request to rename to %s to %s" % (old_name, new_name))
         # Send the packet to the server with the new name
+        self._plugin.network.send_packet(RenameProject.Query(old_name, new_name))
+
         # Read success response if applicable
+
+        # Propagate the change locally
+
         # Refresh project/database list
 
     def get_result(self):
@@ -714,6 +724,7 @@ class SettingsDialog(QDialog):
         dialog.accepted.connect(partial(self._edit_dialog_accepted, dialog))
         dialog.exec_()
 
+
     def _delete_button_clicked(self, _):
         item = self._servers_table.selectedItems()[0]
         server = item.data(Qt.UserRole)
@@ -835,11 +846,48 @@ class SettingsDialog(QDialog):
 
         self._plugin.save_config()
 
+class RenameProjectDialog(QDialog):
+    """The dialog shown when an user wants to rename a project."""
+
+    def __init__(self, plugin, title, server=None):
+        super(RenameProjectDialog, self).__init__()
+        self._plugin = plugin
+
+        # General setup of the dialog
+        self._plugin.logger.debug("Showing rename project dialog")
+        self.setWindowTitle(title)
+        icon_path = plugin.plugin_resource("settings.png")
+        self.setWindowIcon(QIcon(icon_path))
+        self.resize(100, 100)
+
+        # Setup the layout and widgets
+        layout = QVBoxLayout(self)
+
+        self._rename_project_name_label = QLabel("<b>New Project Name</b>")
+        layout.addWidget(self._rename_project_name_label)
+        self._new_project_name = QLineEdit()
+        # XXX - Might be nice to pre-populate with the old name, assuming
+        # the user is renaming due to a type
+        self._new_project_name.setPlaceholderText("New project name")
+        layout.addWidget(self._new_project_name)
+
+        self._add_button = QPushButton("OK")
+        self._add_button.clicked.connect(self.accept)
+        down_side = QWidget(self)
+        buttons_layout = QHBoxLayout(down_side)
+        buttons_layout.addWidget(self._add_button)
+        self._cancel_button = QPushButton("Cancel")
+        self._cancel_button.clicked.connect(self.reject)
+        buttons_layout.addWidget(self._cancel_button)
+        layout.addWidget(down_side)
+
+    def get_result(self):
+        return self._new_project_name.text()
 
 class ServerInfoDialog(QDialog):
     """The dialog shown when an user creates or edits a server."""
 
-    def __init__(self, plugin, title, server=None):
+    def __init__(self, plugin, title):
         super(ServerInfoDialog, self).__init__()
         self._plugin = plugin
 

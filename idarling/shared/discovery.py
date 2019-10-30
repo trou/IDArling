@@ -77,7 +77,7 @@ class ClientsDiscovery(QObject):
 
     def _send_request(self):
         """This function sends to discovery request packets."""
-        self._logger.trace("Sending discovery request")
+        #self._logger.trace("Sending discovery request")
         request = DISCOVERY_REQUEST + " " + self._info
         request = request.encode("utf-8")
         while len(request):

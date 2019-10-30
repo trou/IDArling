@@ -69,6 +69,10 @@ following menus to upload or download a database:
 - File --> Save to server
 ```
 
+### Server
+
+
+
 # Thanks
 
 This project is inspired by [Sol[IDA]rity](https://solidarity.re/). It started
