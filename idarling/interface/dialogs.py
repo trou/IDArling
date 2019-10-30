@@ -107,6 +107,7 @@ class OpenDialog(QDialog):
         main_layout.addWidget(right_side, 0, 1)
         main_layout.setColumnStretch(1, 2)
 
+        # Databases table
         self._databases_group = QGroupBox("Databases", right_side)
         self._databases_layout = QVBoxLayout(self._databases_group)
         self._databases_table = QTableWidget(0, 3, self._databases_group)
@@ -130,11 +131,26 @@ class OpenDialog(QDialog):
         buttons_widget = QWidget(self)
         buttons_layout = QHBoxLayout(buttons_widget)
         buttons_layout.addStretch()
+
+        # Open button
         self._accept_button = QPushButton("Open", buttons_widget)
         self._accept_button.setEnabled(False)
+        # self.accept is a QDialog virtual method
         self._accept_button.clicked.connect(self.accept)
+
+        # Cancel button
         cancel_button = QPushButton("Cancel", buttons_widget)
+        # self.reject is a QDialog virtual method
         cancel_button.clicked.connect(self.reject)
+
+        # Rename Project button
+        # XXX - Make it clickable only after project is selected
+        self._rename_project_button = QPushButton("Rename Project", buttons_widget)
+        self._rename_project_button.setEnabled(False)
+        self._rename_project_button.clicked.connect(self._rename_project)
+
+        # Place buttons onto UI
+        buttons_layout.addWidget(self._rename_project_button)
         buttons_layout.addWidget(cancel_button)
         buttons_layout.addWidget(self._accept_button)
         layout.addWidget(buttons_widget)
@@ -171,6 +187,7 @@ class OpenDialog(QDialog):
         d = self._plugin.network.send_packet(ListDatabases.Query(project.name))
         d.add_callback(partial(self._databases_listed))
         d.add_errback(self._plugin.logger.exception)
+        self._rename_project_button.setEnabled(True)
 
     def _databases_listed(self, reply):
         """Called when the databases list is received."""
@@ -204,6 +221,15 @@ class OpenDialog(QDialog):
 
     def _database_double_clicked(self):
         self.accept()
+
+    def _rename_project(self):
+        # Make sure some project is clicked
+        project = self._projects_table.selectedItems()[0].data(Qt.UserRole)
+        # Pop-up a window to enter the new project name
+        # Read the result
+        # Send the packet to the server with the new name
+        # Read success response if applicable
+        # Refresh project/database list
 
     def get_result(self):
         """Get the project and database selected by the user."""
