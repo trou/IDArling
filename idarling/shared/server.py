@@ -182,7 +182,7 @@ class ServerClient(ClientSocket):
                     new_file_path = self.parent().server_file(new_file_name)
                     os.rename(old_file_path, new_file_path)
 
-        # XXX - update with some sort of success reply
+        # Resend an updated list of project names since it just changed
         self.send_packet(ListProjects.Reply(query, projects))
 
     def _handle_list_projects(self, query):
