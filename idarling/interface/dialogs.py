@@ -145,7 +145,6 @@ class OpenDialog(QDialog):
         cancel_button.clicked.connect(self.reject)
 
         # Rename Project button
-        # XXX - Make it clickable only after project is selected
         self._rename_project_button = QPushButton("Rename Project", buttons_widget)
         self._rename_project_button.setEnabled(False)
         self._rename_project_button.clicked.connect(self._rename_project_button_clicked)
@@ -558,32 +557,43 @@ class SettingsDialog(QDialog):
         top_layout = QHBoxLayout(top_widget)
 
         self._servers = list(self._plugin.config["servers"])
-        self._servers_table = QTableWidget(len(self._servers), 2, self)
+        self._servers_table = QTableWidget(len(self._servers), 3, self)
         top_layout.addWidget(self._servers_table)
         for i, server in enumerate(self._servers):
             # Server host and port
             item = QTableWidgetItem("%s:%d" % (server["host"], server["port"]))
             item.setData(Qt.UserRole, server)
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-            if self._plugin.network.server == server:
-                item.setFlags((item.flags() & ~Qt.ItemIsSelectable))
+            # XXX - This prevented editing a server entry for your current 
+            # server because the row cannot be selected properly with 
+            # SingleSelection option selected
+            #if self._plugin.network.server == server:
+            #    item.setFlags((item.flags() & ~Qt.ItemIsSelectable))
             self._servers_table.setItem(i, 0, item)
 
             # Server has SSL enabled?
-            checkbox = QTableWidgetItem()
+            ssl_checkbox = QTableWidgetItem()
             state = Qt.Unchecked if server["no_ssl"] else Qt.Checked
-            checkbox.setCheckState(state)
-            checkbox.setFlags((checkbox.flags() & ~Qt.ItemIsEditable))
-            checkbox.setFlags((checkbox.flags() & ~Qt.ItemIsUserCheckable))
-            if self._plugin.network.server == server:
-                checkbox.setFlags((checkbox.flags() & ~Qt.ItemIsSelectable))
-            self._servers_table.setItem(i, 1, checkbox)
+            ssl_checkbox.setCheckState(state)
+            ssl_checkbox.setFlags((ssl_checkbox.flags() & ~Qt.ItemIsEditable))
+            ssl_checkbox.setFlags((ssl_checkbox.flags() & ~Qt.ItemIsUserCheckable))
+            self._servers_table.setItem(i, 1, ssl_checkbox)
 
-        self._servers_table.setHorizontalHeaderLabels(("Servers", ""))
+            # Auto-connect enabled?
+            auto_checkbox = QTableWidgetItem()
+            state = Qt.Unchecked if not server["auto_connect"] else Qt.Checked
+            auto_checkbox.setCheckState(state)
+            auto_checkbox.setFlags((auto_checkbox.flags() & ~Qt.ItemIsEditable))
+            auto_checkbox.setFlags((auto_checkbox.flags() & ~Qt.ItemIsUserCheckable))
+            self._servers_table.setItem(i, 2, auto_checkbox)
+
+        self._servers_table.setHorizontalHeaderLabels(("Servers", "SSL",
+                    "Auto"))
         horizontal_header = self._servers_table.horizontalHeader()
         horizontal_header.setSectionsClickable(False)
         horizontal_header.setSectionResizeMode(0, QHeaderView.Stretch)
         horizontal_header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        horizontal_header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self._servers_table.verticalHeader().setVisible(False)
         self._servers_table.setSelectionBehavior(QTableWidget.SelectRows)
         self._servers_table.setSelectionMode(QTableWidget.SingleSelection)
@@ -718,12 +728,15 @@ class SettingsDialog(QDialog):
         dialog.exec_()
 
     def _edit_button_clicked(self, _):
-        item = self._servers_table.selectedItems()[0]
+        selected = self._servers_table.selectedItems()
+        if len(selected) == 0:
+            self._plugin.logger.warning("No server selected")
+            return
+        item = selected[0]
         server = item.data(Qt.UserRole)
         dialog = ServerInfoDialog(self._plugin, "Edit server", server)
         dialog.accepted.connect(partial(self._edit_dialog_accepted, dialog))
         dialog.exec_()
-
 
     def _delete_button_clicked(self, _):
         item = self._servers_table.selectedItems()[0]
@@ -887,7 +900,7 @@ class RenameProjectDialog(QDialog):
 class ServerInfoDialog(QDialog):
     """The dialog shown when an user creates or edits a server."""
 
-    def __init__(self, plugin, title):
+    def __init__(self, plugin, title, server=None):
         super(ServerInfoDialog, self).__init__()
         self._plugin = plugin
 
@@ -898,7 +911,7 @@ class ServerInfoDialog(QDialog):
         self.setWindowIcon(QIcon(icon_path))
         self.resize(100, 100)
 
-        # Setup the layout and widgets
+        # setup the layout and widgets
         layout = QVBoxLayout(self)
 
         self._server_name_label = QLabel("<b>Server Host</b>")
@@ -916,11 +929,15 @@ class ServerInfoDialog(QDialog):
         self._no_ssl_checkbox = QCheckBox("Disable SSL")
         layout.addWidget(self._no_ssl_checkbox)
 
+        self._auto_connect_checkbox = QCheckBox("Auto-connect on startup")
+        layout.addWidget(self._auto_connect_checkbox)
+
         # Set the form elements values if we have a base
         if server is not None:
             self._server_name.setText(server["host"])
             self._server_port.setText(str(server["port"]))
             self._no_ssl_checkbox.setChecked(server["no_ssl"])
+            self._auto_connect_checkbox.setChecked(server["auto_connect"])
 
         down_side = QWidget(self)
         buttons_layout = QHBoxLayout(down_side)
@@ -938,4 +955,5 @@ class ServerInfoDialog(QDialog):
             "host": self._server_name.text() or "127.0.0.1",
             "port": int(self._server_port.text() or "31013"),
             "no_ssl": self._no_ssl_checkbox.isChecked(),
+            "auto_connect": self._auto_connect_checkbox.isChecked(),
         }

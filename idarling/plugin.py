@@ -149,6 +149,12 @@ class Plugin(ida_idaapi.plugin_t):
         self._print_banner()
         self._logger.info("Initialized properly")
         keep = ida_idaapi.PLUGIN_KEEP
+
+        for server in self._config["servers"]:
+            if "auto_connect" in server and server["auto_connect"]:
+                self.logger.info("Attempting to auto-connect to %s:%d" %
+                        (server["host"], server["port"]))
+                self._network.connect(server)
         return keep
 
     def _print_banner(self):
@@ -200,6 +206,23 @@ class Plugin(ida_idaapi.plugin_t):
                 return
             self._logger.setLevel(self._config["level"])
             self._logger.debug("Loaded config: %s" % self._config)
+
+        # Gracefully handle older configs with missing settings
+        self.retrofit_config()
+
+    def retrofit_config(self):
+        """
+        As more and more config options are added we need to gracefully handle
+        older configs that would otherwise cause errors.
+        """
+
+        count = 0
+        for server in self._config["servers"]:
+            if "auto_connect" not in server:
+                self._config["servers"][count]["auto_connect"] = False
+            count += 1
+
+        self.save_config()
 
     def save_config(self):
         """Save the configuration file."""
