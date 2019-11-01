@@ -40,7 +40,7 @@ def start_logging(log_path, log_name, level):
 
     # Log to the console with a first format
     stream_handler = logging.StreamHandler()
-    log_format = "[%(levelname)s] %(message)s"
+    log_format = "[idarling][%(levelname)s] %(message)s"
     formatter = logging.Formatter(fmt=log_format)
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
