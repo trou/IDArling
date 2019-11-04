@@ -51,7 +51,7 @@ class Core(Module):
         idaname = "ida64" if "64" in app_name else "ida"
         if sys.platform == "win32":
             dllname, dlltype = idaname + ".dll", ctypes.windll
-        elif sys.platform == "linux2":
+        elif sys.platform in ["linux", "linux2"]:
             dllname, dlltype = "lib" + idaname + ".so", ctypes.cdll
         elif sys.platform == "darwin":
             dllname, dlltype = "lib" + idaname + ".dylib", ctypes.cdll
@@ -234,9 +234,9 @@ class Core(Module):
         """
         node = ida_netnode.netnode(Core.NETNODE_NAME, 0, True)
 
-        self._project = node.hashval("project") or None
-        self._database = node.hashval("database") or None
-        self._tick = int(node.hashval("tick") or "0")
+        self._project = node.hashstr("project") or None
+        self._database = node.hashstr("database") or None
+        self._tick = int(node.hashstr("tick") or "0")
 
         self._plugin.logger.debug(
             "Loaded netnode: project=%s, database=%s, tick=%d"
@@ -247,12 +247,15 @@ class Core(Module):
         """Save data into our custom netnode."""
         node = ida_netnode.netnode(Core.NETNODE_NAME, 0, True)
 
+        # node.hashset does not work anymore with direct string
+        # use of hashet_buf instead
+        # (see https://github.com/idapython/src/blob/master/swig/netnode.i#L162)
         if self._project:
-            node.hashset("project", str(self._project))
+            node.hashset_buf("project", str(self._project))
         if self._database:
-            node.hashset("database", str(self._database))
+            node.hashset_buf("project", str(self._database))
         if self._tick:
-            node.hashset("tick", str(self._tick))
+            node.hashset_buf("project", str(self._tick))
 
         self._plugin.logger.debug(
             "Saved netnode: project=%s, database=%s, tick=%d"
