@@ -20,6 +20,7 @@ def start_logging(log_path, log_name, level):
     Setup the logger: add a new log level, create a logger which logs into
     the console and also into a log files located at: logs/idarling.%pid%.log.
     """
+    global _loggers
     if log_name in _loggers:
         return _loggers[log_name]
 
