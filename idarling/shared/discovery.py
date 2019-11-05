@@ -66,10 +66,11 @@ class ClientsDiscovery(QObject):
         """Stop the discovery process."""
         self._logger.debug("Stopping clients discovery")
         self._read_notifier.setEnabled(False)
-        try:
-            self._socket.close()
-        except socket.error:
-            pass
+        if self._socket:
+            try:
+                self._socket.close()
+            except socket.error:
+                pass
         self._socket = None
         self._started = False
         self._timer.stop()

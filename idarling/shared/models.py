@@ -15,8 +15,8 @@ from .packets import Default
 
 class Model(Default):
     """
-    A model is an object can be serialized and sent over the network, but that
-    can be saved into the SQL database used by the server.
+    A model is an object that can be serialized and sent over the network, but 
+    that can be saved into the SQL database used by the server.
     """
 
     def build(self, dct):
@@ -39,6 +39,17 @@ class Model(Default):
             ]
         )
         return u"{}({})".format(self.__class__.__name__, attrs)
+
+
+class Renamed(Model):
+    """
+    This is used to send a boolean during rename projects
+    """
+
+    def __init__(self, name, renamed):
+        super(Renamed, self).__init__()
+        self.name = name
+        self.renamed = renamed
 
 
 class Project(Model):

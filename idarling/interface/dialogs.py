@@ -191,7 +191,7 @@ class OpenDialog(QDialog):
 
     def _databases_listed(self, reply):
         """Called when the databases list is received."""
-        self._databases = sorted(reply.databases, key=lambda x: x.date, reverse=True) # sort databases by reverse date
+        self._databases = self.sort_databases(reply.databases)
         self._refresh_databases()
 
     def _refresh_databases(self):
@@ -232,13 +232,19 @@ class OpenDialog(QDialog):
         new_name = dialog.get_result()
         self._plugin.logger.info("Request to rename to %s to %s" % (old_name, new_name))
         # Send the packet to the server with the new name
-        self._plugin.network.send_packet(RenameProject.Query(old_name, new_name))
+        d = self._plugin.network.send_packet(RenameProject.Query(old_name, new_name))
+        d.add_callback(self._project_renamed)
+        d.add_errback(self._plugin.logger.exception)
 
-        # Read success response if applicable
-
-        # Propagate the change locally
-
-        # Refresh project/database list
+    def _project_renamed(self, reply):
+        self._renamed = reply.renamed
+        if self._renamed:
+            self._projects = self.sort_projects(reply.projects)
+            self._refresh_projects()
+        else:
+            self._plugin.logger.debug("Create project dialog")
+            QMessageBox.about(self, "IDArling Error", "Unable to rename.\n"
+                    "Likely more than one client connected?")
 
     def get_result(self):
         """Get the project and database selected by the user."""
@@ -246,6 +252,14 @@ class OpenDialog(QDialog):
         database = self._databases_table.selectedItems()[0].data(Qt.UserRole)
         return project, database
 
+    # XXX - Make x.name configurable based on clicking on columns
+    def sort_projects(self, projects):
+        #return sorted(projects, key=lambda x: x.date, reverse=True) # sort project by reverse date
+        return sorted(projects, key=lambda x: x.name)
+
+    # XXX - Make x.date configurable based on clicking on columns
+    def sort_databases(self, databases):
+        return sorted(databases, key=lambda x: x.date, reverse=True) # sort databases by reverse date
 
 class SaveDialog(OpenDialog):
     """

@@ -10,7 +10,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from .models import Database, Project
+from .models import Database, Project, Renamed
 from .packets import (
     Command,
     Container,
@@ -135,8 +135,22 @@ class RenameProject(ParentCommand):
             self.old_name = old_name
             self.new_name = new_name
 
-    class Reply(IReply, Container, Command):
-        pass
+    class Reply(IReply, Command):
+        def __init__(self, query, projects, renamed):
+            super(RenameProject.Reply, self).__init__(query)
+            self.projects = projects
+            self.renamed = renamed
+
+        def build_command(self, dct):
+            dct["renamed"] = self.renamed
+            dct["projects"] = [project.build({}) for project in self.projects]
+
+        def parse_command(self, dct):
+            #self.renamed_obj = Renamed.new(dct["renamed"])
+            self.renamed = dct["renamed"]
+            self.projects = [
+                Project.new(project) for project in dct["projects"]
+            ]
 
 class JoinSession(DefaultCommand):
     __command__ = "join_session"

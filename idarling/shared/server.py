@@ -14,6 +14,7 @@ import logging
 import os
 import socket
 import ssl
+import threading
 
 from .commands import (
     CreateDatabase,
@@ -164,28 +165,44 @@ class ServerClient(ClientSocket):
                 self._logger.error("Attempt to rename project to existing name")
                 return
 
+        # Grab the database lock. This basically means no other client can be
+        # connected for a rename to occur.
+        db_update_locked = False
         for project in projects:
             if project.name == query.old_name:
-                # XXX - needs some sort of lock to prevent other stuff using it while
-                # renaming
-                self.parent().storage.update_project_name(query.old_name, query.new_name)
-                self.parent().storage.update_database_project(query.old_name, query.new_name)
-                self.parent().storage.update_events_project(query.old_name, query.new_name)
+                self.parent().client_lock.acquire()
+                # Only do the rename if we could lock the db. Otherwise we will
+                # mess with other clients.
+                db_update_locked = self.parent().db_update_lock.acquire(blocking=False)
+                self.parent().client_lock.release()
+                if db_update_locked:
+                    self.parent().storage.update_project_name(query.old_name, query.new_name)
+                    self.parent().storage.update_database_project(query.old_name, query.new_name)
+                    self.parent().storage.update_events_project(query.old_name, query.new_name)
 
-                # We just changed the table entries so be sure to use new names 
-                # for queries
-                databases = self.parent().storage.select_databases(query.new_name)
-                for database in databases:
-                    old_file_name = "%s_%s.idb" % (query.old_name, database.name)
-                    new_file_name = "%s_%s.idb" % (query.new_name, database.name)
-                    old_file_path = self.parent().server_file(old_file_name)
-                    new_file_path = self.parent().server_file(new_file_name)
-                    os.rename(old_file_path, new_file_path)
+                    # We just changed the table entries so be sure to use new names 
+                    # for queries
+                    databases = self.parent().storage.select_databases(query.new_name)
+                    for database in databases:
+                        old_file_name = "%s_%s.idb" % (query.old_name, database.name)
+                        new_file_name = "%s_%s.idb" % (query.new_name, database.name)
+                        old_file_path = self.parent().server_file(old_file_name)
+                        new_file_path = self.parent().server_file(new_file_name)
+                        # If a rename happens before a file is uploaded, the 
+                        # idb won't exist
+                        if os.path.exists(old_file_path):
+                            os.rename(old_file_path, new_file_path)
+
+                    self.parent().db_update_lock.release()
+                else:
+                    self._logger.info("Skipping rename due to database lock")
 
         # Resend an updated list of project names since it just changed
-        self.send_packet(ListProjects.Reply(query, projects))
+        projects = self.parent().storage.select_projects()
+        self.send_packet(RenameProject.Reply(query, projects, db_update_locked))
 
     def _handle_list_projects(self, query):
+        self._logger.info("Got list projects request")
         projects = self.parent().storage.select_projects()
         self.send_packet(ListProjects.Reply(query, projects))
 
@@ -319,6 +336,11 @@ class Server(ServerSocket):
         self._storage.initialize()
 
         self._discovery = ClientsDiscovery(logger)
+        # A temporory lock to stop clients while updating other locks
+        self.client_lock = threading.Lock()
+        # A long term lock that stops breaking database updates when multiple
+        # clients are connected
+        self.db_update_lock = threading.Lock()
 
     @property
     def storage(self):
@@ -370,6 +392,11 @@ class Server(ServerSocket):
         for client in list(self._clients):
             client.disconnect(notify=False)
         self.disconnect()
+        try:
+            self.db_update_lock.release()
+        except RuntimeError:
+            # It might not actually be locked
+            pass
         return True
 
     def _accept(self, sock):
@@ -384,12 +411,31 @@ class Server(ServerSocket):
 
         sock.settimeout(0)  # No timeout
         sock.setblocking(0)  # No blocking
+
+        # If we already have at least one connection, lock the mutex that
+        # prevents database updates like renaming. Connecting clients will
+        # block until an existing blocking operation, like a porject rename, is
+        # completed
+        self.client_lock.acquire()
+        if len(self._clients) == 1:
+            self.db_update_lock.acquire()
         client.wrap_socket(sock)
         self._clients.append(client)
+        self.client_lock.release()
 
     def reject(self, client):
         """Called when a user disconnects."""
+
+        # Allow clients to update database again
+        self.client_lock.acquire()
         self._clients.remove(client)
+        if len(self._clients) <= 1:
+            try:
+                self.db_update_lock.release()
+            except RuntimeError:
+                pass
+
+        self.client_lock.release()
 
     def get_users(self, client, matches=None):
         """Get the other users on the same database."""
