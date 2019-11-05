@@ -41,17 +41,6 @@ class Model(Default):
         return u"{}({})".format(self.__class__.__name__, attrs)
 
 
-class Renamed(Model):
-    """
-    This is used to send a boolean during rename projects
-    """
-
-    def __init__(self, name, renamed):
-        super(Renamed, self).__init__()
-        self.name = name
-        self.renamed = renamed
-
-
 class Project(Model):
     """
     IDBs are organized into projects and databases. A project regroups

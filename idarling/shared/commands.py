@@ -10,7 +10,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-from .models import Database, Project, Renamed
+from .models import Database, Project
 from .packets import (
     Command,
     Container,
@@ -146,7 +146,6 @@ class RenameProject(ParentCommand):
             dct["projects"] = [project.build({}) for project in self.projects]
 
         def parse_command(self, dct):
-            #self.renamed_obj = Renamed.new(dct["renamed"])
             self.renamed = dct["renamed"]
             self.projects = [
                 Project.new(project) for project in dct["projects"]
