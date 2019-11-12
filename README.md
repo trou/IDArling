@@ -1,3 +1,23 @@
+- [IDArling](#idarling)
+  - [Overview](#overview)
+  - [Releases](#releases)
+  - [Installation](#installation)
+    - [Server-side](#server-side)
+    - [Client-side](#client-side)
+      - [Plugin installation](#plugin-installation)
+  - [Connection to server and usage](#connection-to-server-and-usage)
+  - [Features](#features)
+    - [General features](#general-features)
+    - [Implementation details](#implementation-details)
+    - [Known changes already synced by IDArling](#known-changes-already-synced-by-idarling)
+    - [Known changes not currently synced by IDArling](#known-changes-not-currently-synced-by-idarling)
+    - [Known issues due to IDArling use](#known-issues-due-to-idarling-use)
+- [Thanks](#thanks)
+- [Authors](#authors)
+-------------------------------------------------------------------------------
+
+# IDArling
+
 <p align="center">
     <img src="https://i.imgur.com/9Vxm0Fn.png" />
 </p>
