@@ -25,6 +25,19 @@ around the limitations (see below).
 
 ## Installation
 
+### Server-side
+
+The IDArling server is run on a remote system from the command-line. Generally
+simply running `./idarling.py` is sufficient. A more advanced invocation is:
+
+```
+python3 idarling_server.py -h 192.168.1.1 -p 12345 --no-ssl -l DEBUG
+```
+
+### Client-side
+
+#### Plugin installation
+
 Install the IDArling client into the IDA plugins folder.
 
 - Copy `idarling_plugin.py` and the `idarling` folder to the IDA plugins folder.
@@ -47,7 +60,7 @@ The dedicated server requires PyQt5, which is integrated into IDA. If you're
 using an external Python installation, we recommand using Python 3, which offers
 a pre-built package that can be installed with a simple `pip install PyQt5`.
 
-## Usage
+## Connection to server and usage
 
 Open the *Settings* dialog accessible from the right-clicking the widget located
 in the status bar. Show the servers list by clicking on the *Network Settings*
