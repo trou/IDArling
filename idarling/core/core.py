@@ -169,6 +169,8 @@ class Core(Module):
                 core._plugin.logger.trace("Ready to run hook")
                 core.load_netnode()
                 core.join_session()
+                # XXX - calling this function triggered lots of errors
+                # when moving to Python 3
                 core._plugin.interface.painter.ready_to_run()
 
             def get_ea_hint(self, ea):
