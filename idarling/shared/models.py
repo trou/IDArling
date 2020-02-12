@@ -15,8 +15,8 @@ from .packets import Default
 
 class Model(Default):
     """
-    A model is an object can be serialized and sent over the network, but that
-    can be saved into the SQL database used by the server.
+    A model is an object that can be serialized and sent over the network, but 
+    that can be saved into the SQL database used by the server.
     """
 
     def build(self, dct):

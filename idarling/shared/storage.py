@@ -79,6 +79,18 @@ class Storage(object):
         results = self._select("projects", {"name": name}, limit)
         return [Project(**result) for result in results]
 
+    def update_database_project(self, old_name=None, new_name=None, limit=None):
+        """Update a project with the given new name."""
+        self._update("databases", "project", old_name, new_name, limit)
+
+    def update_project_name(self, old_name=None, new_name=None, limit=None):
+        """Update a project with the given new name."""
+        self._update("projects", "name", old_name, new_name, limit)
+
+    def update_events_project(self, old_name=None, new_name=None, limit=None):
+        """Update a project with the given new name."""
+        self._update("events", "project", old_name, new_name, limit)
+
     def insert_database(self, database):
         """Insert a new database into the database."""
         attrs = Default.attrs(database.__dict__)
@@ -148,6 +160,14 @@ class Storage(object):
             sql = (sql + " where {}").format(" and ".join(cols))
         sql += " limit {};".format(limit) if limit else ";"
         c.execute(sql, list(fields.values()))
+        return c.fetchall()
+
+    def _update(self, table, field, old_value, new_value, limit=None):
+        """Update the field in a table matching the given values."""
+        c = self._conn.cursor()
+        sql = "update {} set {} = ? where {} = ?".format(table, field, field)
+        sql += " limit {};".format(limit) if limit else ";"
+        c.execute(sql, [new_value, old_value])
         return c.fetchall()
 
     def _insert(self, table, fields):

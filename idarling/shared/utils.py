@@ -20,6 +20,7 @@ def start_logging(log_path, log_name, level):
     Setup the logger: add a new log level, create a logger which logs into
     the console and also into a log files located at: logs/idarling.%pid%.log.
     """
+    global _loggers
     if log_name in _loggers:
         return _loggers[log_name]
 
@@ -40,7 +41,7 @@ def start_logging(log_path, log_name, level):
 
     # Log to the console with a first format
     stream_handler = logging.StreamHandler()
-    log_format = "[%(levelname)s] %(message)s"
+    log_format = "[idarling][%(levelname)s] %(message)s"
     formatter = logging.Formatter(fmt=log_format)
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)

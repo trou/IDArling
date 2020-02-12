@@ -237,6 +237,7 @@ class ClientSocket(QObject):
 
         if self._write_cursor >= len(self._write_buffer):
             if not self._outgoing:
+                self._write_notifier.setEnabled(False)
                 return  # No more packets to send
             self._write_packet = self._outgoing.popleft()
 
@@ -246,8 +247,8 @@ class ClientSocket(QObject):
                 line = line.encode("utf-8") + b"\n"
             except Exception as e:
                 msg = "Invalid packet being sent: %s" % self._write_packet
-                self._logger.warning(msg)
-                self._logger.exception(e)
+                self._logger.warning(msg + "\n")
+                self._logger.exception(str(e) + "\n")
                 return
 
             # Write the container's content
