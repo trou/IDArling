@@ -77,6 +77,7 @@ class ClientsDiscovery(QObject):
 
     def _send_request(self):
         """This function sends to discovery request packets."""
+        # This is very verbose as it triggers every 1 sec so only enable when debugging
         #self._logger.trace("Sending discovery request")
         request = DISCOVERY_REQUEST + " " + self._info
         request = request.encode("utf-8")
@@ -167,8 +168,7 @@ class ServersDiscovery(QObject):
             # Append the new value
             self._servers.append((server, time.time()))
 
-            # This is very verbose as it triggers every 1 sec so only enable when debugging
-            #self._logger.trace("Sending discovery reply to %s:%d" % address)
+            self._logger.trace("Sending discovery reply to %s:%d" % address)
             # Reply to the discovery request
             reply = DISCOVERY_REPLY
             reply = reply.encode("utf-8")
