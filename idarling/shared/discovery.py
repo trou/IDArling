@@ -167,7 +167,8 @@ class ServersDiscovery(QObject):
             # Append the new value
             self._servers.append((server, time.time()))
 
-            self._logger.trace("Sending discovery reply to %s:%d" % address)
+            # This is very verbose as it triggers every 1 sec so only enable when debugging
+            #self._logger.trace("Sending discovery reply to %s:%d" % address)
             # Reply to the discovery request
             reply = DISCOVERY_REPLY
             reply = reply.encode("utf-8")
