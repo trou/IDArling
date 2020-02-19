@@ -210,6 +210,7 @@ class OpenDialog(QDialog):
         #self._projects = sorted(reply.projects, key=lambda x: x.date, reverse=True) # sort project by reverse date
         self._refresh_projects()
         # Force to fetch databases for the first project
+        self._projects_table.selectRow(0)
         self._project_clicked()
 
     def _refresh_projects(self):
