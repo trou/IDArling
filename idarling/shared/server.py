@@ -17,15 +17,17 @@ import ssl
 import threading
 
 from .commands import (
-    CreateDatabase,
+    CreateGroup,
     CreateProject,
-    RenameProject,
+    CreateDatabase,
     DownloadFile,
     InviteToLocation,
     JoinSession,
     LeaveSession,
-    ListDatabases,
+    ListGroups,
     ListProjects,
+    ListDatabases,
+    RenameProject,
     UpdateFile,
     UpdateLocation,
     UpdateUserColor,
@@ -45,12 +47,17 @@ class ServerClient(ClientSocket):
 
     def __init__(self, logger, parent=None):
         ClientSocket.__init__(self, logger, parent)
+        self._group = None
         self._project = None
         self._database = None
         self._name = None
         self._color = None
         self._ea = None
         self._handlers = {}
+
+    @property
+    def group(self):
+        return self._group
 
     @property
     def project(self):
@@ -77,8 +84,10 @@ class ServerClient(ClientSocket):
 
         # Setup command handlers
         self._handlers = {
+            ListGroups.Query: self._handle_list_groups,
             ListProjects.Query: self._handle_list_projects,
             ListDatabases.Query: self._handle_list_databases,
+            CreateGroup.Query: self._handle_create_group,
             CreateProject.Query: self._handle_create_project,
             CreateDatabase.Query: self._handle_create_database,
             UpdateFile.Query: self._handle_upload_file,
@@ -159,6 +168,7 @@ class ServerClient(ClientSocket):
 
     def _handle_rename_project(self, query):
         self._logger.info("Got rename project request")
+        # XXX - pass the current selected group to select_projects()
         projects = self.parent().storage.select_projects()
         for project in projects:
             if project.name == query.new_name:
@@ -198,15 +208,22 @@ class ServerClient(ClientSocket):
                     self._logger.info("Skipping rename due to database lock")
 
         # Resend an updated list of project names since it just changed
+        # XXX - pass the current selected group to select_projects()
         projects = self.parent().storage.select_projects()
         self.send_packet(RenameProject.Reply(query, projects, db_update_locked))
 
+    def _handle_list_groups(self, query):
+        self._logger.info("Got list groups request")
+        groups = self.parent().storage.select_groups()
+        self.send_packet(ListGroups.Reply(query, groups))
+
     def _handle_list_projects(self, query):
         self._logger.info("Got list projects request")
-        projects = self.parent().storage.select_projects()
+        projects = self.parent().storage.select_projects(query.group)
         self.send_packet(ListProjects.Reply(query, projects))
 
     def _handle_list_databases(self, query):
+        self._logger.info("Got list databases request")
         databases = self.parent().storage.select_databases(query.project)
         for database in databases:
             database_info = database.project, database.name
@@ -217,6 +234,10 @@ class ServerClient(ClientSocket):
             else:
                 database.tick = -1
         self.send_packet(ListDatabases.Reply(query, databases))
+
+    def _handle_create_group(self, query):
+        self.parent().storage.insert_group(query.group)
+        self.send_packet(CreateGroup.Reply(query))
 
     def _handle_create_project(self, query):
         self.parent().storage.insert_project(query.project)

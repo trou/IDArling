@@ -43,15 +43,17 @@ from PyQt5.QtWidgets import (
 )
 
 from ..shared.commands import (
-    CreateDatabase,
+    CreateGroup,
     CreateProject,
+    CreateDatabase,
     RenameProject,
-    ListDatabases,
+    ListGroups,
     ListProjects,
+    ListDatabases,
     UpdateUserColor,
     UpdateUserName,
 )
-from ..shared.models import Database, Project
+from ..shared.models import Group, Project, Database
 
 
 class OpenDialog(QDialog):
@@ -60,6 +62,7 @@ class OpenDialog(QDialog):
     def __init__(self, plugin):
         super(OpenDialog, self).__init__()
         self._plugin = plugin
+        self._groups = None
         self._projects = None
         self._databases = None
 
@@ -67,7 +70,7 @@ class OpenDialog(QDialog):
         self.setWindowTitle("Open from Remote Server")
         icon_path = self._plugin.plugin_resource("download.png")
         self.setWindowIcon(QIcon(icon_path))
-        self.resize(900, 450)
+        self.resize(1400, 450)
 
         # Setup of the layout and widgets
         layout = QVBoxLayout(self)
@@ -77,7 +80,23 @@ class OpenDialog(QDialog):
 
         self._left_side = QWidget(main)
         self._left_layout = QVBoxLayout(self._left_side)
-        self._projects_table = QTableWidget(0, 1, self._left_side)
+        self._groups_table = QTableWidget(0, 1, self._left_side)
+        self._groups_table.setHorizontalHeaderLabels(("Groups",))
+        self._groups_table.horizontalHeader().setSectionsClickable(False)
+        self._groups_table.horizontalHeader().setStretchLastSection(True)
+        self._groups_table.verticalHeader().setVisible(False)
+        self._groups_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self._groups_table.setSelectionMode(QTableWidget.SingleSelection)
+        self._groups_table.itemSelectionChanged.connect(
+            self._group_clicked
+        )
+        self._left_layout.addWidget(self._groups_table)
+        main_layout.addWidget(self._left_side, 0, 0)
+        main_layout.setColumnStretch(0, 1)
+
+        self._middle_side = QWidget(main)
+        self._middle_layout = QVBoxLayout(self._middle_side)
+        self._projects_table = QTableWidget(0, 1, self._middle_side)
         self._projects_table.setHorizontalHeaderLabels(("Projects",))
         self._projects_table.horizontalHeader().setSectionsClickable(False)
         self._projects_table.horizontalHeader().setStretchLastSection(True)
@@ -87,9 +106,9 @@ class OpenDialog(QDialog):
         self._projects_table.itemSelectionChanged.connect(
             self._project_clicked
         )
-        self._left_layout.addWidget(self._projects_table)
-        main_layout.addWidget(self._left_side, 0, 0)
-        main_layout.setColumnStretch(0, 1)
+        self._middle_layout.addWidget(self._projects_table)
+        main_layout.addWidget(self._middle_side, 0, 1)
+        main_layout.setColumnStretch(1, 1)
 
         right_side = QWidget(main)
         right_layout = QVBoxLayout(right_side)
@@ -106,8 +125,8 @@ class OpenDialog(QDialog):
         details_layout.addWidget(self._date_label, 1, 1)
         details_layout.setColumnStretch(1, 1)
         right_layout.addWidget(details_group)
-        main_layout.addWidget(right_side, 0, 1)
-        main_layout.setColumnStretch(1, 2)
+        main_layout.addWidget(right_side, 0, 2)
+        main_layout.setColumnStretch(2, 2)
 
         # Databases table
         self._databases_group = QGroupBox("Databases", right_side)
@@ -156,9 +175,33 @@ class OpenDialog(QDialog):
         buttons_layout.addWidget(self._accept_button)
         layout.addWidget(buttons_widget)
 
+        # Ask the server for the list of groups
+        d = self._plugin.network.send_packet(ListGroups.Query())
+        d.add_callback(self._groups_listed)
+        d.add_errback(self._plugin.logger.exception)
+
+    def _groups_listed(self, reply):
+        """Called when the groups list is received."""
+        self._groups = sorted(reply.groups, key=lambda x: x.name) # sort groups by name
+        #self._groups = sorted(reply.groups, key=lambda x: x.date, reverse=True) # sort groups by reverse date
+        self._refresh_groups()
+
+    def _refresh_groups(self):
+        """Refreshes the groups table."""
+        self._groups_table.setRowCount(len(self._groups))
+        for i, group in enumerate(self._groups):
+            item = QTableWidgetItem(group.name)
+            item.setData(Qt.UserRole, group)
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            self._groups_table.setItem(i, 0, item)
+
+    def _group_clicked(self):
+        """Called when a group item is clicked."""
+        group = self._groups_table.selectedItems()[0].data(Qt.UserRole)
+
         # Ask the server for the list of projects
-        d = self._plugin.network.send_packet(ListProjects.Query())
-        d.add_callback(self._projects_listed)
+        d = self._plugin.network.send_packet(ListProjects.Query(group.name))
+        d.add_callback(partial(self._projects_listed))
         d.add_errback(self._plugin.logger.exception)
 
     def _projects_listed(self, reply):
@@ -166,6 +209,8 @@ class OpenDialog(QDialog):
         self._projects = sorted(reply.projects, key=lambda x: x.name) # sort project by name
         #self._projects = sorted(reply.projects, key=lambda x: x.date, reverse=True) # sort project by reverse date
         self._refresh_projects()
+        # Force to fetch databases for the first project
+        self._project_clicked()
 
     def _refresh_projects(self):
         """Refreshes the projects table."""
@@ -264,8 +309,8 @@ class OpenDialog(QDialog):
 
 class SaveDialog(OpenDialog):
     """
-    This dialog is shown to user to select which remote database to save. We
-    extend the save dialog to reuse most of the UI setup code.
+    This save dialog is shown to user to select which remote database to save. We
+    extend the open dialog to reuse most of the UI setup code.
     """
 
     def __init__(self, plugin):
@@ -280,10 +325,20 @@ class SaveDialog(OpenDialog):
         # Change the accept button text
         self._accept_button.setText("Save")
 
+        # Add a button to create a group
+        create_group_button = QPushButton("Create Group", self._left_side)
+        create_group_button.clicked.connect(self._create_group_clicked)
+        self._left_layout.addWidget(create_group_button)
+        
         # Add a button to create a project
-        create_project_button = QPushButton("Create Project", self._left_side)
-        create_project_button.clicked.connect(self._create_project_clicked)
-        self._left_layout.addWidget(create_project_button)
+        self._create_project_button = QPushButton(
+            "Create Project", self._middle_side
+        )
+        self._create_project_button.setEnabled(False)
+        self._create_project_button.clicked.connect(
+            self._create_project_clicked
+        )
+        self._middle_layout.addWidget(self._create_project_button)
 
         # Add a button to create a database
         self._create_database_button = QPushButton(
@@ -294,6 +349,57 @@ class SaveDialog(OpenDialog):
             self._create_database_clicked
         )
         self._databases_layout.addWidget(self._create_database_button)
+
+    def _group_clicked(self):
+        super(SaveDialog, self)._group_clicked()
+        self._group = self._groups_table.selectedItems()[0].data(
+            Qt.UserRole
+        )
+        self._create_project_button.setEnabled(True)
+
+    def _create_group_clicked(self):
+        dialog = CreateGroupDialog(self._plugin)
+        dialog.accepted.connect(partial(self._create_group_accepted, dialog))
+        dialog.exec_()
+
+    def _create_group_accepted(self, dialog):
+        """Called when the group creation dialog is accepted."""
+        name = dialog.get_result()
+        # Ensure we don't already have a group with that name
+        if any(group.name == name for group in self._groups):
+            failure = QMessageBox()
+            failure.setIcon(QMessageBox.Warning)
+            failure.setStandardButtons(QMessageBox.Ok)
+            failure.setText("A group with that name already exists!")
+            failure.setWindowTitle("New Group")
+            icon_path = self._plugin.plugin_resource("upload.png")
+            failure.setWindowIcon(QIcon(icon_path))
+            failure.exec_()
+            return
+
+        # Get all the information we need and sent it to the server
+        date_format = "%Y/%m/%d %H:%M"
+        date = datetime.datetime.now().strftime(date_format)
+        group = Group(name, date)
+        d = self._plugin.network.send_packet(CreateGroup.Query(group))
+        d.add_callback(partial(self._group_created, group))
+        d.add_errback(self._plugin.logger.exception)
+
+    def _group_created(self, group, _):
+        """Called when the create group reply is received."""
+        self._groups.append(group)
+        self._refresh_groups()
+        row = len(self._groups) - 1
+        self._groups_table.selectRow(row)
+        self._accept_button.setEnabled(False)
+
+    # XXX - not needed?
+    def _refresh_groups(self):
+        super(SaveDialog, self)._refresh_groups()
+        for row in range(self._groups_table.rowCount()):
+            item = self._groups_table.item(row, 0)
+            group = item.data(Qt.UserRole)
+            pass
 
     def _project_clicked(self):
         super(SaveDialog, self)._project_clicked()
@@ -333,7 +439,7 @@ class SaveDialog(OpenDialog):
         ftype = ida_loader.get_file_type_name()
         date_format = "%Y/%m/%d %H:%M"
         date = datetime.datetime.now().strftime(date_format)
-        project = Project(name, hash, file, ftype, date)
+        project = Project(self._group.name, name, hash, file, ftype, date)
         d = self._plugin.network.send_packet(CreateProject.Query(project))
         d.add_callback(partial(self._project_created, project))
         d.add_errback(self._plugin.logger.exception)
@@ -406,16 +512,16 @@ class SaveDialog(OpenDialog):
                 item.setFlags(item.flags() | Qt.ItemIsEnabled)
 
 
-class CreateProjectDialog(QDialog):
-    """The dialog shown when an user wants to create a project."""
+class CreateGroupDialog(QDialog):
+    """The dialog shown when an user wants to create a group."""
 
     def __init__(self, plugin):
-        super(CreateProjectDialog, self).__init__()
+        super(CreateGroupDialog, self).__init__()
         self._plugin = plugin
 
         # General setup of the dialog
-        self._plugin.logger.debug("Create project dialog")
-        self.setWindowTitle("Create Project")
+        self._plugin.logger.debug("Create group dialog")
+        self.setWindowTitle("Create Group")
         icon_path = plugin.plugin_resource("upload.png")
         self.setWindowIcon(QIcon(icon_path))
         self.resize(100, 100)
@@ -423,7 +529,7 @@ class CreateProjectDialog(QDialog):
         # Set up the layout and widgets
         layout = QVBoxLayout(self)
 
-        self._nameLabel = QLabel("<b>Project Name</b>")
+        self._nameLabel = QLabel("<b>Group Name</b>")
         layout.addWidget(self._nameLabel)
         self._nameEdit = QLineEdit()
         self._nameEdit.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]+")))
@@ -444,7 +550,19 @@ class CreateProjectDialog(QDialog):
         return self._nameEdit.text()
 
 
-class CreateDatabaseDialog(CreateProjectDialog):
+class CreateProjectDialog(CreateGroupDialog):
+    """The dialog shown when an user wants to create a project. We extend the
+    create project dialog to avoid duplicating the UI setup code.
+    """
+
+    def __init__(self, plugin):
+        super(CreateProjectDialog, self).__init__(plugin)
+        #self._plugin.logger.debug("Create project dialog")
+        self.setWindowTitle("Create Project")
+        self._nameLabel.setText("<b>Project Name</b>")
+
+
+class CreateDatabaseDialog(CreateGroupDialog):
     """
     The dialog shown when an user wants to create a database. We extend the
     create project dialog to avoid duplicating the UI setup code.
@@ -452,6 +570,7 @@ class CreateDatabaseDialog(CreateProjectDialog):
 
     def __init__(self, plugin):
         super(CreateDatabaseDialog, self).__init__(plugin)
+        #self._plugin.logger.debug("Create database dialog")
         self.setWindowTitle("Create Database")
         self._nameLabel.setText("<b>Database Name</b>")
 

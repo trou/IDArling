@@ -13,7 +13,7 @@
 import json
 import sqlite3
 
-from .models import Database, Project
+from .models import Group, Project, Database
 from .packets import Default, DefaultEvent
 
 
@@ -31,14 +31,24 @@ class Storage(object):
     def initialize(self):
         """Create all the default tables."""
         self._create(
+            "groups",
+            [
+                "name text not null",
+                "date text not null",
+                "primary key (name)",
+            ],
+        )
+        self._create(
             "projects",
             [
+                "group_name text not null",
                 "name text not null",
                 "hash text not null",
                 "file text not null",
                 "type text not null",
                 "date text not null",
-                "primary key (name)",
+                "foreign key(group_name) references groups(name)",
+                "primary key (group_name, name)",
             ],
         )
         self._create(
@@ -65,6 +75,20 @@ class Storage(object):
             ],
         )
 
+    def insert_group(self, group):
+        """Insert a new group into the database."""
+        self._insert("groups", Default.attrs(group.__dict__))
+
+    def select_group(self, name):
+        """Select the group with the given name."""
+        objects = self.select_groups(name, 1)
+        return objects[0] if objects else None
+
+    def select_groups(self, name=None, limit=None):
+        """Select the groups with the given name."""
+        results = self._select("groups", {"name": name}, limit)
+        return [Group(**result) for result in results]
+
     def insert_project(self, project):
         """Insert a new project into the database."""
         self._insert("projects", Default.attrs(project.__dict__))
@@ -74,9 +98,11 @@ class Storage(object):
         objects = self.select_projects(name, 1)
         return objects[0] if objects else None
 
-    def select_projects(self, name=None, limit=None):
-        """Select the projects with the given name."""
-        results = self._select("projects", {"name": name}, limit)
+    def select_projects(self, group=None, name=None, limit=None):
+        """Select the projects with the given group and name."""
+        results = self._select(
+            "projects", {"group_name": group, "name": name}, limit
+        )
         return [Project(**result) for result in results]
 
     def update_database_project(self, old_name=None, new_name=None, limit=None):
