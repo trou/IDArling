@@ -105,6 +105,8 @@ following menus to upload or download a database:
 - File --> Save to server
 ```
 
+![](img/open_from_server.png)
+
 ## Features
 
 ### General features
