@@ -266,7 +266,7 @@ class ServerClient(ClientSocket):
 
     def _handle_download_file(self, query):
         database = self.parent().storage.select_database(
-            query.project, query.database
+            query.group, query.project, query.database
         )
         file_name = "%s_%s_%s.idb" % (query.group, database.project, database.name)
         file_path = self.parent().server_file(file_name)
