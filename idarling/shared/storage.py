@@ -54,11 +54,13 @@ class Storage(object):
         self._create(
             "databases",
             [
+                "group_name text not null",
                 "project text not null",
                 "name text not null",
                 "date text not null",
                 "foreign key(project) references projects(name)",
-                "primary key(project, name)",
+                "foreign key(group_name) references groups(name)",
+                "primary key(group_name, project, name)",
             ],
         )
         self._create(
@@ -123,15 +125,15 @@ class Storage(object):
         attrs.pop("tick")
         self._insert("databases", attrs)
 
-    def select_database(self, project, name):
+    def select_database(self, group, project, name):
         """Select the database with the given project and name."""
-        objects = self.select_databases(project, name, 1)
+        objects = self.select_databases(group, project, name, 1)
         return objects[0] if objects else None
 
-    def select_databases(self, project=None, name=None, limit=None):
+    def select_databases(self, group=None, project=None, name=None, limit=None):
         """Select the databases with the given project and name."""
         results = self._select(
-            "databases", {"project": project, "name": name}, limit
+            "databases", {"group_name": group, "project": project, "name": name}, limit
         )
         return [Database(**result) for result in results]
 

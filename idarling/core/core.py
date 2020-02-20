@@ -62,6 +62,7 @@ class Core(Module):
 
     def __init__(self, plugin):
         super(Core, self).__init__(plugin)
+        self._group = None
         self._project = None
         self._database = None
         self._tick = 0
@@ -76,6 +77,15 @@ class Core(Module):
         self._ui_hooks_core = None
         self._view_hooks_core = None
         self._hooked = False
+
+    @property
+    def group(self):
+        return self._group
+
+    @group.setter
+    def group(self, group):
+        self._group = group
+        self.save_netnode()
 
     @property
     def project(self):
@@ -236,13 +246,14 @@ class Core(Module):
         """
         node = ida_netnode.netnode(Core.NETNODE_NAME, 0, True)
 
+        self._group = node.hashstr("group") or None
         self._project = node.hashstr("project") or None
         self._database = node.hashstr("database") or None
         self._tick = int(node.hashstr("tick") or "0")
 
         self._plugin.logger.debug(
-            "Loaded netnode: project=%s, database=%s, tick=%d"
-            % (self._project, self._database, self._tick)
+            "Loaded netnode: group=%s, project=%s, database=%s, tick=%d"
+            % (self._group, self._project, self._database, self._tick)
         )
 
     def save_netnode(self):
@@ -252,6 +263,8 @@ class Core(Module):
         # node.hashset does not work anymore with direct string
         # use of hashet_buf instead
         # (see https://github.com/idapython/src/blob/master/swig/netnode.i#L162)
+        if self._group:
+            node.hashset_buf("project", str(self._group))
         if self._project:
             node.hashset_buf("project", str(self._project))
         if self._database:
@@ -260,8 +273,8 @@ class Core(Module):
             node.hashset_buf("project", str(self._tick))
 
         self._plugin.logger.debug(
-            "Saved netnode: project=%s, database=%s, tick=%d"
-            % (self._project, self._database, self._tick)
+            "Saved netnode: group=%s, project=%s, database=%s, tick=%d"
+            % (self._group, self._project, self._database, self._tick)
         )
 
     def join_session(self):
@@ -293,7 +306,7 @@ class Core(Module):
                 self._users.clear()
 
             d = self._plugin.network.send_packet(
-                ListDatabases.Query(self._project)
+                ListDatabases.Query(self._group, self._project)
             )
             if d:
                 d.add_callback(databases_listed)

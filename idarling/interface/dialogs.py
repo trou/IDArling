@@ -12,7 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 import datetime
 from functools import partial
-import logging
+import logging, time
 import binascii
 
 import ida_loader
@@ -103,7 +103,7 @@ class OpenDialog(QDialog):
         self._projects_table.verticalHeader().setVisible(False)
         self._projects_table.setSelectionBehavior(QTableWidget.SelectRows)
         self._projects_table.setSelectionMode(QTableWidget.SingleSelection)
-        self._projects_table.itemSelectionChanged.connect(
+        self._projects_table.itemClicked.connect(
             self._project_clicked
         )
         self._middle_layout.addWidget(self._projects_table)
@@ -196,6 +196,7 @@ class OpenDialog(QDialog):
             self._groups_table.setItem(i, 0, item)
 
     def _group_clicked(self):
+        self._plugin.logger.debug("OpenDialog._group_clicked()")
         """Called when a group item is clicked."""
         group = self._groups_table.selectedItems()[0].data(Qt.UserRole)
 
@@ -205,15 +206,14 @@ class OpenDialog(QDialog):
         d.add_errback(self._plugin.logger.exception)
 
     def _projects_listed(self, reply):
+        self._plugin.logger.debug("OpenDialog._projects_listed()")
         """Called when the projects list is received."""
         self._projects = sorted(reply.projects, key=lambda x: x.name) # sort project by name
         #self._projects = sorted(reply.projects, key=lambda x: x.date, reverse=True) # sort project by reverse date
         self._refresh_projects()
-        # Force to fetch databases for the first project
-        self._projects_table.selectRow(0)
-        self._project_clicked()
 
     def _refresh_projects(self):
+        self._plugin.logger.debug("OpenDialog._refresh_projects()")
         """Refreshes the projects table."""
         self._projects_table.setRowCount(len(self._projects))
         for i, project in enumerate(self._projects):
@@ -224,14 +224,24 @@ class OpenDialog(QDialog):
 
     def _project_clicked(self):
         """Called when a project item is clicked."""
-        project = self._projects_table.selectedItems()[0].data(Qt.UserRole)
+        self._plugin.logger.debug("OpenDialog._project_clicked()")
+        if len(self._projects) == 0:
+            self._plugin.logger.info("No project to display yet 2")
+            return  # no project in the group yet
+        
+        group = self._groups_table.selectedItems()[0].data(Qt.UserRole)
+        project_items = self._projects_table.selectedItems()
+        if not project_items:
+            self._plugin.logger.info("No selected item 2")
+            return
+        project = project_items[0].data(Qt.UserRole)
         self._file_label.setText("<b>File:</b> %s" % str(project.file))
         self._hash_label.setText("<b>Hash:</b> %s" % str(project.hash))
         self._type_label.setText("<b>Type:</b> %s" % str(project.type))
         self._date_label.setText("<b>Date:</b> %s" % str(project.date))
 
         # Ask the server for the list of databases
-        d = self._plugin.network.send_packet(ListDatabases.Query(project.name))
+        d = self._plugin.network.send_packet(ListDatabases.Query(group.name, project.name))
         d.add_callback(partial(self._databases_listed))
         d.add_errback(self._plugin.logger.exception)
         self._rename_project_button.setEnabled(True)
@@ -295,9 +305,10 @@ class OpenDialog(QDialog):
 
     def get_result(self):
         """Get the project and database selected by the user."""
+        group = self._groups_table.selectedItems()[0].data(Qt.UserRole)
         project = self._projects_table.selectedItems()[0].data(Qt.UserRole)
         database = self._databases_table.selectedItems()[0].data(Qt.UserRole)
-        return project, database
+        return group, project, database
 
     # XXX - Make x.name configurable based on clicking on columns
     def sort_projects(self, projects):
@@ -316,6 +327,7 @@ class SaveDialog(OpenDialog):
 
     def __init__(self, plugin):
         super(SaveDialog, self).__init__(plugin)
+        self._group = None
         self._project = None
 
         # General setup of the dialog
@@ -403,10 +415,14 @@ class SaveDialog(OpenDialog):
             pass
 
     def _project_clicked(self):
+        self._plugin.logger.debug("SaveDialog._project_clicked()")
         super(SaveDialog, self)._project_clicked()
-        self._project = self._projects_table.selectedItems()[0].data(
-            Qt.UserRole
-        )
+        self._plugin.logger.debug("SaveDialog._project_clicked() continue")
+        project_items = self._projects_table.selectedItems()
+        if not project_items:
+            self._plugin.logger.info("No selected item 2")
+            return
+        self._project = project_items[0].data(Qt.UserRole)
         self._create_database_button.setEnabled(True)
 
     def _create_project_clicked(self):
@@ -418,6 +434,8 @@ class SaveDialog(OpenDialog):
         """Called when the project creation dialog is accepted."""
         name = dialog.get_result()
         # Ensure we don't already have a project with that name
+        # Note: 2 different groups can have two projects with the same name
+        # and it will effectively be 2 different projects
         if any(project.name == name for project in self._projects):
             failure = QMessageBox()
             failure.setIcon(QMessageBox.Warning)
@@ -454,7 +472,14 @@ class SaveDialog(OpenDialog):
         self._accept_button.setEnabled(False)
 
     def _refresh_projects(self):
+        self._plugin.logger.debug("SaveDialog._refresh_projects()")
         super(SaveDialog, self)._refresh_projects()
+        self._plugin.logger.debug("SaveDialog._refresh_projects() continue")
+
+        if len(self._projects) == 0:
+            self._plugin.logger.info("No project to display yet 3")
+            return  # no project in the group yet
+
         hash = ida_nalt.retrieve_input_file_md5()
         if hash.endswith(b'\x00'):
             hash = hash[0:-1]
@@ -493,7 +518,7 @@ class SaveDialog(OpenDialog):
         # Get all the information we need and sent it to the server
         date_format = "%Y/%m/%d %H:%M"
         date = datetime.datetime.now().strftime(date_format)
-        database = Database(self._project.name, name, date, -1)
+        database = Database(self._group.name, self._project.name, name, date, -1)
         d = self._plugin.network.send_packet(CreateDatabase.Query(database))
         d.add_callback(partial(self._database_created, database))
         d.add_errback(self._plugin.logger.exception)

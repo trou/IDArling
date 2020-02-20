@@ -79,8 +79,9 @@ class Database(Model):
     current tick (events) count.
     """
 
-    def __init__(self, project, name, date, tick=0):
+    def __init__(self, group_name, project, name, date, tick=0):
         super(Database, self).__init__()
+        self.group_name = group_name
         self.project = project
         self.name = name
         self.date = date

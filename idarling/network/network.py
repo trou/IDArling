@@ -104,6 +104,8 @@ class Network(Module):
         ret = sock.connect_ex((host, port))
         if ret != 0 and ret != errno.EINPROGRESS and ret != errno.EWOULDBLOCK:
             self._client.disconnect()
+        else:
+            self._plugin.logger.info("Connected")
 
     def disconnect(self):
         """Disconnect from the current server."""

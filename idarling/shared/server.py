@@ -149,7 +149,7 @@ class ServerClient(ClientSocket):
             if packet.tick and interval and packet.tick % interval == 0:
 
                 def file_downloaded(reply):
-                    file_name = "%s_%s.idb" % (self._project, self._database)
+                    file_name = "%s_%s_%s.idb" % (self._group, self._project, self._database)
                     file_path = self.parent().server_file(file_name)
 
                     # Write the file to disk
@@ -192,8 +192,10 @@ class ServerClient(ClientSocket):
 
                     # We just changed the table entries so be sure to use new names 
                     # for queries
+                    # XXX - pass the group to select_databases()
                     databases = self.parent().storage.select_databases(query.new_name)
                     for database in databases:
+                        # XXX - pass the group in the filename
                         old_file_name = "%s_%s.idb" % (query.old_name, database.name)
                         new_file_name = "%s_%s.idb" % (query.new_name, database.name)
                         old_file_path = self.parent().server_file(old_file_name)
@@ -224,10 +226,10 @@ class ServerClient(ClientSocket):
 
     def _handle_list_databases(self, query):
         self._logger.info("Got list databases request")
-        databases = self.parent().storage.select_databases(query.project)
+        databases = self.parent().storage.select_databases(query.group, query.project)
         for database in databases:
             database_info = database.project, database.name
-            file_name = "%s_%s.idb" % database_info
+            file_name = "%s_%s_%s.idb" % (query.group, database.project, database.name)
             file_path = self.parent().server_file(file_name)
             if os.path.isfile(file_path):
                 database.tick = self.parent().storage.last_tick(*database_info)
@@ -249,9 +251,9 @@ class ServerClient(ClientSocket):
 
     def _handle_upload_file(self, query):
         database = self.parent().storage.select_database(
-            query.project, query.database
+            query.group, query.project, query.database
         )
-        file_name = "%s_%s.idb" % (database.project, database.name)
+        file_name = "%s_%s_%s.idb" % (query.group, database.project, database.name)
         file_path = self.parent().server_file(file_name)
 
         # Write the file received to disk
@@ -264,7 +266,7 @@ class ServerClient(ClientSocket):
         database = self.parent().storage.select_database(
             query.project, query.database
         )
-        file_name = "%s_%s.idb" % (database.project, database.name)
+        file_name = "%s_%s_%s.idb" % (query.group, database.project, database.name)
         file_path = self.parent().server_file(file_name)
 
         # Read file from disk and sent it

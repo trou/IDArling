@@ -67,8 +67,9 @@ class ListDatabases(ParentCommand):
     __command__ = "list_databases"
 
     class Query(IQuery, DefaultCommand):
-        def __init__(self, project):
+        def __init__(self, group, project):
             super(ListDatabases.Query, self).__init__()
+            self.group = group
             self.project = project
 
     class Reply(IReply, Command):
@@ -145,8 +146,9 @@ class UpdateFile(ParentCommand):
     __command__ = "update_file"
 
     class Query(IQuery, Container, DefaultCommand):
-        def __init__(self, project, database):
+        def __init__(self, group, project, database):
             super(UpdateFile.Query, self).__init__()
+            self.group = group
             self.project = project
             self.database = database
 
@@ -158,8 +160,9 @@ class DownloadFile(ParentCommand):
     __command__ = "download_file"
 
     class Query(IQuery, DefaultCommand):
-        def __init__(self, project, database):
+        def __init__(self, group, project, database):
             super(DownloadFile.Query, self).__init__()
+            self.group = group
             self.project = project
             self.database = database
 
