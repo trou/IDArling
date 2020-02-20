@@ -61,7 +61,7 @@ class Event(DefaultEvent):
         """Decodes UTF-8 bytes into a unicode string."""
         if not isinstance(s, str):
             return s
-        return s.decode("utf-8")
+        return s #.decode("utf-8")
 
     @staticmethod
     def decode_bytes(s):

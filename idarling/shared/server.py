@@ -114,7 +114,7 @@ class ServerClient(ClientSocket):
     def disconnect(self, err=None, notify=True):
         # Notify other users that we disconnected
         self.parent().reject(self)
-        if self._project and self._database and notify:
+        if self._group and self._project and self._database and notify:
             self.parent().forward_users(self, LeaveSession(self.name, False))
         ClientSocket.disconnect(self, err)
         self._logger.info("Disconnected")
@@ -125,7 +125,7 @@ class ServerClient(ClientSocket):
             self._handlers[packet.__class__](packet)
 
         elif isinstance(packet, Event):
-            if not self._project or not self._database:
+            if not self._group or not self._project or not self._database:
                 self._logger.warning(
                     "Received a packet from an unsubscribed client"
                 )
@@ -133,13 +133,15 @@ class ServerClient(ClientSocket):
 
             # Check for de-synchronization
             tick = self.parent().storage.last_tick(
-                self._project, self._database
+                self._group, self._project, self._database
             )
             if tick >= packet.tick:
                 self._logger.warning("De-synchronization detected!")
                 packet.tick = tick + 1
 
             # Save the event into the database
+            self._logger.info("hello")
+            self._logger.info(packet)
             self.parent().storage.insert_event(self, packet)
             # Forward the event to the other users
             self.parent().forward_users(self, packet)
@@ -158,7 +160,7 @@ class ServerClient(ClientSocket):
                     self._logger.info("Auto-saved file %s" % file_name)
 
                 d = self.send_packet(
-                    DownloadFile.Query(self._project, self._database)
+                    DownloadFile.Query(self._group, self._project, self._database)
                 )
                 d.add_callback(file_downloaded)
                 d.add_errback(self._logger.exception)
@@ -228,8 +230,8 @@ class ServerClient(ClientSocket):
         self._logger.info("Got list databases request")
         databases = self.parent().storage.select_databases(query.group, query.project)
         for database in databases:
-            database_info = database.project, database.name
-            file_name = "%s_%s_%s.idb" % (query.group, database.project, database.name)
+            database_info = database.group_name, database.project, database.name
+            file_name = "%s_%s_%s.idb" % (database_info)
             file_path = self.parent().server_file(file_name)
             if os.path.isfile(file_path):
                 database.tick = self.parent().storage.last_tick(*database_info)
@@ -277,6 +279,7 @@ class ServerClient(ClientSocket):
         self.send_packet(reply)
 
     def _handle_join_session(self, packet):
+        self._group = packet.group
         self._project = packet.project
         self._database = packet.database
         self._name = packet.name
@@ -302,7 +305,7 @@ class ServerClient(ClientSocket):
 
         # Send all missed events
         events = self.parent().storage.select_events(
-            self._project, self._database, packet.tick
+            self._group, self._project, self._database, packet.tick
         )
         self._logger.debug("Sending %d missed events" % len(events))
         for event in events:
@@ -317,6 +320,7 @@ class ServerClient(ClientSocket):
         for user in self.parent().get_users(self):
             self.send_packet(LeaveSession(user.name))
 
+        self._group = None
         self._project = None
         self._database = None
         self._name = None

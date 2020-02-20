@@ -294,6 +294,7 @@ class Core(Module):
                 ea = ida_kernwin.get_screen_ea()
                 self._plugin.network.send_packet(
                     JoinSession(
+                        self._group,
                         self._project,
                         self._database,
                         self._tick,

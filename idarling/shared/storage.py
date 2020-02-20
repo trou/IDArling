@@ -58,22 +58,24 @@ class Storage(object):
                 "project text not null",
                 "name text not null",
                 "date text not null",
-                "foreign key(project) references projects(name)",
                 "foreign key(group_name) references groups(name)",
+                "foreign key(group_name, project) references projects(group_name, name)",
                 "primary key(group_name, project, name)",
             ],
         )
         self._create(
             "events",
             [
+                "group_name text not null",
                 "project text not null",
                 "database text not null",
                 "tick integer not null",
                 "dict text not null",
-                "foreign key(project) references projects(name)",
-                "foreign key(project, database)"
-                "     references databases(project, name)",
-                "primary key(project, database, tick)",
+                "foreign key(group_name) references groups(name)",
+                "foreign key(group_name, project) references projects(group_name, name)",
+                "foreign key(group_name, project, database)"
+                "     references databases(group_name, project, name)",
+                "primary key(group_name, project, database, tick)",
             ],
         )
 
@@ -143,6 +145,7 @@ class Storage(object):
         self._insert(
             "events",
             {
+                "group_name": client.group,
                 "project": client.project,
                 "database": client.database,
                 "tick": event.tick,
@@ -150,12 +153,12 @@ class Storage(object):
             },
         )
 
-    def select_events(self, project, database, tick):
+    def select_events(self, group, project, database, tick):
         """Get all events sent after the given tick count."""
         c = self._conn.cursor()
-        sql = "select * from events where project = ? and database = ?"
+        sql = "select * from events where group_name = ? and project = ? and database = ?"
         sql += "and tick > ? order by tick asc;"
-        c.execute(sql, [project, database, tick])
+        c.execute(sql, [group, project, database, tick])
         events = []
         for result in c.fetchall():
             dct = json.loads(result["dict"])
@@ -163,12 +166,12 @@ class Storage(object):
             events.append(DefaultEvent.new(dct))
         return events
 
-    def last_tick(self, project, database):
+    def last_tick(self, group, project, database):
         """Get the last tick of the specified project and database."""
         c = self._conn.cursor()
-        sql = "select tick from events where project = ? and database = ? "
+        sql = "select tick from events where group_name = ? and project = ? and database = ? "
         sql += "order by tick desc limit 1;"
-        c.execute(sql, [project, database])
+        c.execute(sql, [group, project, database])
         result = c.fetchone()
         return result["tick"] if result else 0
 

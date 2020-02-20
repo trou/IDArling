@@ -197,8 +197,9 @@ class RenameProject(ParentCommand):
 class JoinSession(DefaultCommand):
     __command__ = "join_session"
 
-    def __init__(self, project, database, tick, name, color, ea, silent=True):
+    def __init__(self, group, project, database, tick, name, color, ea, silent=True):
         super(JoinSession, self).__init__()
+        self.group = group
         self.project = project
         self.database = database
         self.tick = tick
