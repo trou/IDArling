@@ -1,4 +1,13 @@
 # hardcoded for kernel32.dll
+#
+# Usage:
+# 1. Load kernel32.dll with symbols in IDA
+# 2. Enable TRACE level logs on both IDArling IDA plugin and remote server
+# 3. Connect to IDArling server from IDA and save IDB before doing anything in IDA
+# 4. run IDA script: test_events.py
+# 5. check events being sent by IDA plugin / received by server
+# 6. Close IDA and re-open previously saved snapshot
+# 7. Check replay of events sent by server / received by IDA plugin
 
 import time
 
@@ -105,7 +114,17 @@ del_items(0x78DBDCB0)
 # XXX - SgrChanged
 
 # XXX - UserLabelsEvent
-# XXX - UserCmtsEvent
+
+print("[+] Defining 2 comments in HexRays window in function defined at 0x78DBB091 -> UserCmtsEvent")
+list_comments = [((0x78DBB06A, 74), 'one comment in HexRays'), ((0x78DBB091, 74), 'another comment in HexRays')]
+cmts = ida_hexrays.user_cmts_new()
+for (tl_ea, tl_itp), cmt in list_comments:
+    tl = ida_hexrays.treeloc_t()
+    tl.ea = tl_ea
+    tl.itp = tl_itp
+    cmts.insert(tl, ida_hexrays.citem_cmt_t(cmt))
+ida_hexrays.save_user_cmts(0x78DBB050, cmts)
+
 # XXX - UserIflagsEvent
 # XXX - UserLvarSettingsEvent
 # XXX - UserNumformsEvent
