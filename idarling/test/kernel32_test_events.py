@@ -9,7 +9,7 @@
 # 6. Close IDA and re-open previously saved snapshot
 # 7. Check replay of events sent by server / received by IDA plugin
 
-import time
+import time, ida_hexrays
 
 print("[+] Create nops at 0x78D35379 -> MakeCodeEvent")
 create_insn(0x78D35379)
