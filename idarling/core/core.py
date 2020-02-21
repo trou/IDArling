@@ -264,13 +264,13 @@ class Core(Module):
         # use of hashet_buf instead
         # (see https://github.com/idapython/src/blob/master/swig/netnode.i#L162)
         if self._group:
-            node.hashset_buf("project", str(self._group))
+            node.hashset_buf("group", str(self._group))
         if self._project:
             node.hashset_buf("project", str(self._project))
         if self._database:
-            node.hashset_buf("project", str(self._database))
+            node.hashset_buf("database", str(self._database))
         if self._tick:
-            node.hashset_buf("project", str(self._tick))
+            node.hashset_buf("tick", str(self._tick))
 
         self._plugin.logger.debug(
             "Saved netnode: group=%s, project=%s, database=%s, tick=%d"
@@ -280,7 +280,7 @@ class Core(Module):
     def join_session(self):
         """Join the collaborative session."""
         self._plugin.logger.debug("Joining session")
-        if self._project and self._database:
+        if self._group and self._project and self._database:
 
             def databases_listed(reply):
                 if any(d.name == self._database for d in reply.databases):
@@ -316,7 +316,7 @@ class Core(Module):
     def leave_session(self):
         """Leave the collaborative session."""
         self._plugin.logger.debug("Leaving session")
-        if self._project and self._database:
+        if self._group and self._project and self._database:
             name = self._plugin.config["user"]["name"]
             self._plugin.network.send_packet(LeaveSession(name))
             self._users.clear()

@@ -45,30 +45,38 @@ class Event(DefaultEvent):
     @staticmethod
     def encode(s):
         """Encodes a unicode string into UTF-8 bytes."""
-        if not isinstance(s, unicode):
+        if isinstance(s, bytes):
             return s
-        return s.encode("utf-8")
+        elif isinstance(s, unicode):
+            return s.encode("utf-8")
+        raise NotImplementedError("encode(): %s not implemented" % (type(s)))
 
     @staticmethod
     def encode_bytes(s):
         """Encodes a unicode string into raw bytes."""
-        if not isinstance(s, unicode):
+        if isinstance(s, bytes):
             return s
-        return s.encode("raw_unicode_escape")
+        elif isinstance(s, unicode):
+            return s.encode("raw_unicode_escape")
+        raise NotImplementedError("encode_bytes(): %s not implemented" % (type(s)))
 
     @staticmethod
     def decode(s):
         """Decodes UTF-8 bytes into a unicode string."""
-        if not isinstance(s, str):
+        if isinstance(s, unicode):
             return s
-        return s #.decode("utf-8")
+        elif isinstance(s, bytes):
+            return s.decode("utf-8")
+        raise NotImplementedError("decode(): %s not implemented" % (type(s)))
 
     @staticmethod
     def decode_bytes(s):
         """Decodes raw bytes into a unicode string."""
-        if not isinstance(s, str):
+        if isinstance(s, unicode):
             return s
-        return s.decode("raw_unicode_escape")
+        elif isinstance(s, bytes):
+            return s.decode("raw_unicode_escape")
+        raise NotImplementedError("decode_bytes(): %s not implemented" % (type(s)))
 
     def __call__(self):
         """Reproduce the underlying user event into IDA."""

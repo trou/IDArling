@@ -202,7 +202,7 @@ class ClientSocket(QObject):
                         )
                     except Exception as e:
                         msg = "Invalid packet received: %s" % line
-                        self._logger.warning(msg)
+                        self._logger.error(msg)
                         self._logger.exception(e)
                         continue
                 else:
