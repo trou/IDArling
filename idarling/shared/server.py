@@ -168,8 +168,7 @@ class ServerClient(ClientSocket):
 
     def _handle_rename_project(self, query):
         self._logger.info("Got rename project request")
-        # XXX - pass the current selected group to select_projects()
-        projects = self.parent().storage.select_projects()
+        projects = self.parent().storage.select_projects(query.group)
         for project in projects:
             if project.name == query.new_name:
                 self._logger.error("Attempt to rename project to existing name")
@@ -186,32 +185,32 @@ class ServerClient(ClientSocket):
                 db_update_locked = self.parent().db_update_lock.acquire(blocking=False)
                 self.parent().client_lock.release()
                 if db_update_locked:
-                    self.parent().storage.update_project_name(query.old_name, query.new_name)
-                    self.parent().storage.update_database_project(query.old_name, query.new_name)
-                    self.parent().storage.update_events_project(query.old_name, query.new_name)
+                    self.parent().storage.update_project_name(query.group, query.old_name, query.new_name)
+                    self.parent().storage.update_database_project(query.group, query.old_name, query.new_name)
+                    self.parent().storage.update_events_project(query.group, query.old_name, query.new_name)
 
                     # We just changed the table entries so be sure to use new names 
                     # for queries
-                    # XXX - pass the group to select_databases()
-                    databases = self.parent().storage.select_databases(query.new_name)
+                    databases = self.parent().storage.select_databases(query.group, query.new_name)
                     for database in databases:
-                        # XXX - pass the group in the filename
-                        old_file_name = "%s_%s.idb" % (query.old_name, database.name)
-                        new_file_name = "%s_%s.idb" % (query.new_name, database.name)
+                        old_file_name = "%s_%s_%s.idb" % (query.group, query.old_name, database.name)
+                        new_file_name = "%s_%s_%s.idb" % (query.group, query.new_name, database.name)
                         old_file_path = self.parent().server_file(old_file_name)
                         new_file_path = self.parent().server_file(new_file_name)
                         # If a rename happens before a file is uploaded, the 
                         # idb won't exist
                         if os.path.exists(old_file_path):
+                            self._logger.info("Renaming: %s to %s" % (old_file_path, new_file_name))
                             os.rename(old_file_path, new_file_path)
+                        else:
+                            self._logger.warning("Skipping file rename due to non existing file: %s" % old_file_path)
 
                     self.parent().db_update_lock.release()
                 else:
                     self._logger.info("Skipping rename due to database lock")
 
         # Resend an updated list of project names since it just changed
-        # XXX - pass the current selected group to select_projects()
-        projects = self.parent().storage.select_projects()
+        projects = self.parent().storage.select_projects(query.group)
         self.send_packet(RenameProject.Reply(query, projects, db_update_locked))
 
     def _handle_list_groups(self, query):

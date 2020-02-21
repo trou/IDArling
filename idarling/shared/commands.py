@@ -173,8 +173,9 @@ class RenameProject(ParentCommand):
     __command__ = "rename_project"
 
     class Query(IQuery, DefaultCommand):
-        def __init__(self, old_name, new_name):
+        def __init__(self, group, old_name, new_name):
             super(RenameProject.Query, self).__init__()
+            self.group = group
             self.old_name = old_name
             self.new_name = new_name
 

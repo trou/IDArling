@@ -196,7 +196,7 @@ class Core(Module):
 
         class ViewHooksCore(ida_kernwin.View_Hooks):
             def view_loc_changed(self, view, now, was):
-                core._plugin.logger.trace("View loc changed hook")
+                #core._plugin.logger.trace("View loc changed hook")
                 if now.plce.toea() != was.plce.toea():
                     name = core._plugin.config["user"]["name"]
                     color = core._plugin.config["user"]["color"]

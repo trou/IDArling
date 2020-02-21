@@ -285,11 +285,12 @@ class OpenDialog(QDialog):
         dialog.exec_()
 
     def _rename_project_dialog_accepted(self, dialog):
+        group = self._groups_table.selectedItems()[0].data(Qt.UserRole).name
         old_name = self._projects_table.selectedItems()[0].data(Qt.UserRole).name
         new_name = dialog.get_result()
-        self._plugin.logger.info("Request to rename to %s to %s" % (old_name, new_name))
+        self._plugin.logger.info("Request to rename to %s to %s in group: %s" % (old_name, new_name, group))
         # Send the packet to the server with the new name
-        d = self._plugin.network.send_packet(RenameProject.Query(old_name, new_name))
+        d = self._plugin.network.send_packet(RenameProject.Query(group, old_name, new_name))
         d.add_callback(self._project_renamed)
         d.add_errback(self._plugin.logger.exception)
 

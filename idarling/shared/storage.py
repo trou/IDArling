@@ -109,17 +109,17 @@ class Storage(object):
         )
         return [Project(**result) for result in results]
 
-    def update_database_project(self, old_name=None, new_name=None, limit=None):
+    def update_project_name(self, group=None, old_name=None, new_name=None, limit=None):
         """Update a project with the given new name."""
-        self._update("databases", "project", old_name, new_name, limit)
+        self._update("projects", "name", new_name, {"group_name": group, "name": old_name}, limit)
 
-    def update_project_name(self, old_name=None, new_name=None, limit=None):
+    def update_database_project(self, group=None, old_name=None, new_name=None, limit=None):
         """Update a project with the given new name."""
-        self._update("projects", "name", old_name, new_name, limit)
+        self._update("databases", "project", new_name, {"group_name": group, "project": old_name}, limit)
 
-    def update_events_project(self, old_name=None, new_name=None, limit=None):
+    def update_events_project(self, group=None, old_name=None, new_name=None, limit=None):
         """Update a project with the given new name."""
-        self._update("events", "project", old_name, new_name, limit)
+        self._update("events", "project", new_name, {"group_name": group, "project": old_name}, limit)
 
     def insert_database(self, database):
         """Insert a new database into the database."""
@@ -193,12 +193,19 @@ class Storage(object):
         c.execute(sql, list(fields.values()))
         return c.fetchall()
 
-    def _update(self, table, field, old_value, new_value, limit=None):
-        """Update the field in a table matching the given values."""
+    def _update(self, table, field, new_value, search_fields, limit=None):
+        """Update the field in a table matching the given search fields."""
         c = self._conn.cursor()
-        sql = "update {} set {} = ? where {} = ?".format(table, field, field)
+        sql = "update {} set {} = ?".format(table, field)
+        search_fields = {key: val for key, val in search_fields.items() if val}
+        if len(search_fields):
+            cols = ["{} = ?".format(col) for col in search_fields.keys()]
+            sql = (sql + " where {}").format(" and ".join(cols))
         sql += " limit {};".format(limit) if limit else ";"
-        c.execute(sql, [new_value, old_value])
+        conditions = [new_value] + list(search_fields.values())
+        #print(sql)
+        #print(conditions)
+        c.execute(sql, conditions)
         return c.fetchall()
 
     def _insert(self, table, fields):
