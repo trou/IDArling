@@ -280,7 +280,8 @@ class OpenDialog(QDialog):
         self.accept()
 
     def _rename_project_button_clicked(self, _):
-        dialog = RenameProjectDialog(self._plugin, "Rename project")
+        current_project = self._projects_table.selectedItems()[0].data(Qt.UserRole).name
+        dialog = RenameProjectDialog(self._plugin, "Rename project", current_project)
         dialog.accepted.connect(partial(self._rename_project_dialog_accepted, dialog))
         dialog.exec_()
 
@@ -1031,7 +1032,7 @@ class SettingsDialog(QDialog):
 class RenameProjectDialog(QDialog):
     """The dialog shown when an user wants to rename a project."""
 
-    def __init__(self, plugin, title, server=None):
+    def __init__(self, plugin, title, current_value, server=None):
         super(RenameProjectDialog, self).__init__()
         self._plugin = plugin
 
@@ -1048,9 +1049,9 @@ class RenameProjectDialog(QDialog):
         self._rename_project_name_label = QLabel("<b>New Project Name</b>")
         layout.addWidget(self._rename_project_name_label)
         self._new_project_name = QLineEdit()
-        # XXX - Might be nice to pre-populate with the old name, assuming
-        # the user is renaming due to a type
-        self._new_project_name.setPlaceholderText("New project name")
+        # Populate the field with the old name and already selected
+        self._new_project_name.setText(current_value)
+        self._new_project_name.setSelection(0, len(current_value))
         layout.addWidget(self._new_project_name)
 
         self._add_button = QPushButton("OK")
