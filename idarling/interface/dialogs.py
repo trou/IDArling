@@ -78,6 +78,7 @@ class OpenDialog(QDialog):
         main_layout = QGridLayout(main)
         layout.addWidget(main)
 
+        # Groups - left layout
         self._left_side = QWidget(main)
         self._left_layout = QVBoxLayout(self._left_side)
         self._groups_table = QTableWidget(0, 1, self._left_side)
@@ -94,6 +95,7 @@ class OpenDialog(QDialog):
         main_layout.addWidget(self._left_side, 0, 0)
         main_layout.setColumnStretch(0, 1)
 
+        # Projects - middle layout
         self._middle_side = QWidget(main)
         self._middle_layout = QVBoxLayout(self._middle_side)
         self._projects_table = QTableWidget(0, 1, self._middle_side)
@@ -110,6 +112,13 @@ class OpenDialog(QDialog):
         main_layout.addWidget(self._middle_side, 0, 1)
         main_layout.setColumnStretch(1, 1)
 
+        # Create a project button
+        self._rename_project_button = QPushButton("Rename Project", self._middle_side)
+        self._rename_project_button.setEnabled(False)
+        self._rename_project_button.clicked.connect(self._rename_project_button_clicked)
+        self._middle_layout.addWidget(self._rename_project_button)
+
+        # Databases - right layout
         right_side = QWidget(main)
         right_layout = QVBoxLayout(right_side)
         details_group = QGroupBox("Details", right_side)
@@ -149,6 +158,7 @@ class OpenDialog(QDialog):
         self._databases_layout.addWidget(self._databases_table)
         right_layout.addWidget(self._databases_group)
 
+        # General buttons - bottom right "stretched" layout
         buttons_widget = QWidget(self)
         buttons_layout = QHBoxLayout(buttons_widget)
         buttons_layout.addStretch()
@@ -164,13 +174,7 @@ class OpenDialog(QDialog):
         # self.reject is a QDialog virtual method
         cancel_button.clicked.connect(self.reject)
 
-        # Rename Project button
-        self._rename_project_button = QPushButton("Rename Project", buttons_widget)
-        self._rename_project_button.setEnabled(False)
-        self._rename_project_button.clicked.connect(self._rename_project_button_clicked)
-
         # Place buttons onto UI
-        buttons_layout.addWidget(self._rename_project_button)
         buttons_layout.addWidget(cancel_button)
         buttons_layout.addWidget(self._accept_button)
         layout.addWidget(buttons_widget)
