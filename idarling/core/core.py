@@ -164,7 +164,7 @@ class Core(Module):
                 return 0
 
             def ev_auto_queue_empty(self, arg):
-                core._plugin.logger.debug("Auto queue empty hook")
+                #core._plugin.logger.debug("Auto queue empty hook")
                 if ida_auto.get_auto_state() == ida_auto.AU_NONE:
                     client = core._plugin.network.client
                     if client:

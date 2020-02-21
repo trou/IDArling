@@ -140,8 +140,6 @@ class ServerClient(ClientSocket):
                 packet.tick = tick + 1
 
             # Save the event into the database
-            self._logger.info("hello")
-            self._logger.info(packet)
             self.parent().storage.insert_event(self, packet)
             # Forward the event to the other users
             self.parent().forward_users(self, packet)
@@ -307,9 +305,10 @@ class ServerClient(ClientSocket):
         events = self.parent().storage.select_events(
             self._group, self._project, self._database, packet.tick
         )
-        self._logger.debug("Sending %d missed events" % len(events))
+        self._logger.debug("Sending %d missed events..." % len(events))
         for event in events:
             self.send_packet(event)
+        self._logger.debug("Done sending %d missed events" % len(events))
 
     def _handle_leave_session(self, packet):
         # Inform others users that we are leaving

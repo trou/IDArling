@@ -142,21 +142,21 @@ We like to define the following terms in the IDArling jargon:
 
 In general, the first thing is to create a group for the research topic you are
 starting. Then, you create a project to analyse a given file hash (e.g. `ntoskrnl.exe`
-on Windows 10 1809 x64 from May 2019) and then you have one initial database.
+on Windows 10 1809 x64 from May 2019) and then you create one initial database.
 All the changes made for this IDB can leave in the same database as long as all
 the changes you do are synced. However, if there are some major changes that are
-not synced by IDArling, you need to create additional databases to track them
-and all continue to use the latest database.
+not synced by IDArling, you need to create an additional database to track them
+and all users SHOULD then use the latest database.
 
 In general, it is better to always start from the latest database (i.e. 
 snapshot) for a given project when you start working from the IDArling 
 server, except if you know what you are doing.
 
-However, if you locally update your IDB with a new type in IDA and save to a 
+If you locally update your IDB with a new type in IDA and save it to a 
 new snapshot, you are NOT REQUIRED to then close and open the new snapshot 
 that you saved to the database. You can keep working from your existing 
 already-opened snapshot. The only exception to this would be if someone else 
-simultaneously updated their own idb and uploaded a new snapshot.
+simultaneously updated their own IDB and uploaded a new snapshot.
 
 ### Known changes already synced by IDArling
 

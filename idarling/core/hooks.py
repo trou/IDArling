@@ -45,7 +45,8 @@ class Hooks(object):
         if ida_auto.get_auto_state() == ida_auto.AU_NONE:
             self._plugin.network.send_packet(event)
         else:
-            self._plugin.logger.debug("Ignoring a packet")
+            #self._plugin.logger.debug("Ignoring a packet")
+            pass
 
 
 class IDBHooks(Hooks, ida_idp.IDB_Hooks):
