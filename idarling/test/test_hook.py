@@ -239,6 +239,7 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
             
     def _hxe_callback(self, event, *_):
         if not self._installed:
+            print("HexRays hooks not installed, exiting early")
             return 0
 
         if event == ida_hexrays.hxe_func_printed:
@@ -246,7 +247,7 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
             func = ida_funcs.get_func(ea)
             if func is None:
                 print("func is None, early exit")
-                return
+                return 0
 
             if self._func_ea != func.start_ea:
                 self._func_ea = func.start_ea
@@ -262,6 +263,8 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
             self._print_user_iflags(func.start_ea)
             self._print_user_lvar_settings(func.start_ea)
             self._print_user_numforms(func.start_ea)
+        else:
+            print("HexRays: main SKIPPED")
         return 0
         
     @staticmethod
@@ -284,6 +287,8 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
         if labels != self._labels:
             print("HexRays: Detected a user labels at 0x%x: %s" % (ea, labels))
             self._labels = labels
+        else:
+            print("HexRays: Detected a user labels SKIPPED")
 
     @staticmethod
     def _get_user_cmts(ea):
@@ -305,6 +310,8 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
         if cmts != self._cmts:
             print("HexRays: Detected a user cmts at 0x%x: %s" % (ea, cmts))
             self._cmts = cmts
+        else:
+            print("HexRays: Detected a user cmts SKIPPED")
 
     @staticmethod
     def _get_user_iflags(ea):
@@ -336,6 +343,8 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
         if iflags != self._iflags:
             print("HexRays: Detected a user iflags at 0x%x: %s" % (ea, iflags))
             self._iflags = iflags
+        else:
+            print("HexRays: Detected a user iflags SKIPPED")
 
     @staticmethod
     def _get_user_lvar_settings(ea):
@@ -400,6 +409,8 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
         if lvar_settings != self._lvar_settings:
             print("HexRays: Detected a user lvars settings at 0x%x: %s" % (ea, lvar_settings))
             self._lvar_settings = lvar_settings
+        else:
+            print("HexRays: Detected a user lvars settings SKIPPED")
 
     @staticmethod
     def _get_user_numforms(ea):
@@ -441,6 +452,8 @@ class MyHexRaysHooks(ida_idp.IDB_Hooks):
         if numforms != self._numforms:
             print("HexRays: Detected a user numforms at 0x%x: %s" % (ea, numforms))
             self._numforms = numforms
+        else:
+            print("HexRays: Detected a user numforms SKIPPED")
 
 idb_hooks = MyIDBHooks()
 idb_hooks.hook()
