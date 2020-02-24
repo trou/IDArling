@@ -112,7 +112,7 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
     #             )
     #         )
     #     self._send_packet(evt.LocalTypesChangedEvent(local_types))
-         return 0
+        return 0
 
     def ti_changed(self, ea, type, fname):
         type = ida_typeinf.idc_get_type_raw(ea)
