@@ -594,7 +594,8 @@ class StrucMemberCreatedEvent(Event):
         if ida_bytes.is_struct(self.flag):
             mt.tid = self.extra["id"]
         if ida_bytes.is_off0(self.flag) or ida_bytes.is_off1(self.flag):
-            mt.ri = ida_nalt.refinfo_t(
+            mt.ri = ida_nalt.refinfo_t()
+            mt.ri.init(
                 self.extra["flags"],
                 self.extra["base"],
                 self.extra["target"],
@@ -630,7 +631,8 @@ class StrucMemberChangedEvent(Event):
         if ida_bytes.is_struct(self.flag):
             mt.tid = self.extra["id"]
         if ida_bytes.is_off0(self.flag) or ida_bytes.is_off1(self.flag):
-            mt.ri = ida_nalt.refinfo_t(
+            mt.ri = ida_nalt.refinfo_t()
+            mt.ri.init(
                 self.extra["flags"],
                 self.extra["base"],
                 self.extra["target"],
