@@ -43,6 +43,10 @@ It is stable enough to be used in its current state, but be aware of the feature
 IDArling does not support before using it so you can save a new snapshot to work
 around the limitations (see below).
 
+Note: this is a fork of [https://github.com/IDArlingTeam/IDArling](IDArlingTeam).
+The IDArlingTeam version supports IDA 7.0+ and Python2/3. Our fork only supports
+IDA 7.4+ and Python 3.
+
 ## Installation
 
 There are two different use cases:
