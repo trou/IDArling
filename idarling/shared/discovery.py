@@ -83,7 +83,10 @@ class ClientsDiscovery(QObject):
         request = request.encode("utf-8")
         while len(request):
             try:
-                sent = self._socket.sendto(request, socket.MSG_DONTWAIT, ("<broadcast>", 31013))
+                self._socket.setblocking(0)
+                sent = self._socket.sendto(
+                    request, 0, ("<broadcast>", 31013)
+                )
                 request = request[sent:]
             except socket.error as e:
                 self._logger.warning("Couldn't send discovery request: {}".format(e))
