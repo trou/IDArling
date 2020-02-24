@@ -65,6 +65,8 @@ python3 idarling_server.py -h 192.168.1.1 -p 12345 --no-ssl -l DEBUG
 
 ### Client-side
 
+IDA 7.4 with IDA Python 3 is supported.
+
 Install the IDArling client into the IDA plugins folder.
 
 - Copy `idarling_plugin.py` and the `idarling` folder to the IDA plugins folder.
