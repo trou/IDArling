@@ -28,6 +28,7 @@ import ida_segregs
 import ida_struct
 import ida_typeinf
 import ida_ua
+import ida_idc
 
 from ..shared.packets import DefaultEvent
 
@@ -389,6 +390,8 @@ class OpTypeChangedEvent(Event):
             ida_bytes.op_chr(self.ea, self.n)
         if self.op == "oct":
             ida_bytes.op_oct(self.ea, self.n)
+        if self.op == "offset":
+            ida_idc.op_plain_offset(self.ea, self.n, 0)
         if self.op == "enum":
             id = ida_enum.get_enum(self.extra["ename"])
             ida_bytes.op_enum(self.ea, self.n, id, self.extra["serial"])
