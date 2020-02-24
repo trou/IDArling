@@ -505,7 +505,10 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         return 0
 
     def bookmark_changed(self, index, pos, desc):
-        self._plugin.logger.debug("bookmark_changed() not implemented yet")
+        rinfo = pos.renderer_info()
+        plce = pos.place()
+        ea = plce.touval(pos)
+        self._send_packet(evt.BookmarkChangedEvent(ea, index, desc))
         return 0
 
     def sgr_deleted(self, start_ea, end_ea, regnum):

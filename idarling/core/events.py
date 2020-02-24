@@ -29,6 +29,7 @@ import ida_struct
 import ida_typeinf
 import ida_ua
 import ida_idc
+import idc
 
 from ..shared.packets import DefaultEvent
 
@@ -854,6 +855,19 @@ class BytePatchedEvent(Event):
 
     def __call__(self):
         ida_bytes.patch_byte(self.ea, self.value)
+
+
+class BookmarkChangedEvent(Event):
+    __event__ = "bookmark_changed"
+
+    def __init__(self, ea, pos, cmt):
+        super(BookmarkChangedEvent, self).__init__()
+        self.ea = ea
+        self.pos = pos
+        self.cmt = cmt
+
+    def __call__(self):
+        idc.put_bookmark(self.ea, 0, 0, 0, self.pos, self.cmt)
 
 
 class SgrChanged(Event):
