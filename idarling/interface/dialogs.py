@@ -1085,7 +1085,7 @@ class ServerInfoDialog(QDialog):
         self.setWindowIcon(QIcon(icon_path))
         self.resize(100, 100)
 
-        # setup the layout and widgets
+        # Setup the layout and widgets
         layout = QVBoxLayout(self)
 
         self._server_name_label = QLabel("<b>Server Host</b>")
