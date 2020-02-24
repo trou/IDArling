@@ -163,7 +163,7 @@ class ClientSocket(QObject):
                     return False
 
             self._connected = True
-            self._logger.debug("Connected")
+            self._logger.info("Connected")
             return True
 
     def _notify_read(self):

@@ -172,7 +172,7 @@ base IDB.
 * Syncs variable names in Hex-Rays
 * Syncs comments in Hex-Rays
 * Syncs function prototype edits in both IDA and Hex-Rays
-* Syncs integer type (hex vs integer vs binary) changes in both IDA and Hex-Rays
+* Syncs integer type (hex / integer / binary / enum) changes in both IDA and Hex-Rays
 * Manually creating an enum and pasting in the code will actually sync across
  IDBs
 
@@ -182,18 +182,17 @@ These changes typically require you to create a new database (i.e. snapshot, as
 explained above) so you don't lose your changes. It is typically the case for
 actions that do not generate events that IDArling can catch and propagate.
 
-* importing a new header file ("File > Load file > Parse C header file"): If 
+* Importing a new header file ("File > Load file > Parse C header file"): If 
 we know we are going to have to import C headers, we want to do it on one 
 system and then save the snapshot, because we're unable to sync 
 those.
-* upgrading IDA version
+* Upgrading IDA version
 * adding a new type: If you add a new type that is a pointer or another type 
 that doesn't sync to the struct or enum tabs, you MUST save a new database
-* converting raw data to code
-* sync notepad (github #79)
-* local types from header imports or local types at all that are not structs or
+* Converting raw data to code
+* Sync notepad (github #79)
+* Local types from header imports or local types at all that are not structs or
   enums
-* renamed enums in Hex-Rays output
 * Opcode settings (Options > General > Number of opcode bytes) don't sync
 
 ### Known issues due to IDArling use
