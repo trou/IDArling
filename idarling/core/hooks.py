@@ -493,12 +493,11 @@ class HexRaysHooks(Hooks):
         super(HexRaysHooks, self).__init__(plugin)
         self._available = None
         self._installed = False
-        self._func_ea = ida_idaapi.BADADDR
-        self._labels = {}
-        self._cmts = {}
-        self._iflags = {}
-        self._lvar_settings = {}
-        self._numforms = {}
+        # We cache all HexRays data the first time we encounter a new function
+        # and only send events to IDArling server if we didn't encounter the
+        # specific data for a given function. This is just an optimization to 
+        # reduce the amount of messages sent and replicated to other users
+        self._cached_funcs = {}
 
     def hook(self):
         if self._available is None:
@@ -524,17 +523,15 @@ class HexRaysHooks(Hooks):
             ea = ida_kernwin.get_screen_ea()
             func = ida_funcs.get_func(ea)
             if func is None:
-                return
-
-            if self._func_ea != func.start_ea:
-                self._func_ea = func.start_ea
-                self._labels = HexRaysHooks._get_user_labels(self._func_ea)
-                self._cmts = HexRaysHooks._get_user_cmts(self._func_ea)
-                self._iflags = HexRaysHooks._get_user_iflags(self._func_ea)
-                self._lvar_settings = HexRaysHooks._get_user_lvar_settings(
-                    self._func_ea
-                )
-                self._numforms = HexRaysHooks._get_user_numforms(self._func_ea)
+                return 0
+            
+            if func.start_ea not in self._cached_funcs.keys():
+                self._cached_funcs[func.start_ea] = {}
+                self._cached_funcs[func.start_ea]["labels"] = []
+                self._cached_funcs[func.start_ea]["cmts"] = []
+                self._cached_funcs[func.start_ea]["iflags"] = []
+                self._cached_funcs[func.start_ea]["lvar_settings"] = []
+                self._cached_funcs[func.start_ea]["numforms"] = []
             self._send_user_labels(func.start_ea)
             self._send_user_cmts(func.start_ea)
             self._send_user_iflags(func.start_ea)
@@ -559,9 +556,9 @@ class HexRaysHooks(Hooks):
 
     def _send_user_labels(self, ea):
         labels = HexRaysHooks._get_user_labels(ea)
-        if labels != self._labels:
+        if labels != self._cached_funcs[ea]["labels"]:
             self._send_packet(evt.UserLabelsEvent(ea, labels))
-            self._labels = labels
+            self._cached_funcs[ea]["labels"] = labels
 
     @staticmethod
     def _get_user_cmts(ea):
@@ -580,9 +577,9 @@ class HexRaysHooks(Hooks):
 
     def _send_user_cmts(self, ea):
         cmts = HexRaysHooks._get_user_cmts(ea)
-        if cmts != self._cmts:
+        if cmts != self._cached_funcs[ea]["cmts"]:
             self._send_packet(evt.UserCmtsEvent(ea, cmts))
-            self._cmts = cmts
+            self._cached_funcs[ea]["cmts"] = cmts
 
     @staticmethod
     def _get_user_iflags(ea):
@@ -611,9 +608,9 @@ class HexRaysHooks(Hooks):
 
     def _send_user_iflags(self, ea):
         iflags = HexRaysHooks._get_user_iflags(ea)
-        if iflags != self._iflags:
+        if iflags != self._cached_funcs[ea]["iflags"]:
             self._send_packet(evt.UserIflagsEvent(ea, iflags))
-            self._iflags = iflags
+            self._cached_funcs[ea]["iflags"] = iflags
 
     @staticmethod
     def _get_user_lvar_settings(ea):
@@ -678,9 +675,9 @@ class HexRaysHooks(Hooks):
 
     def _send_user_lvar_settings(self, ea):
         lvar_settings = HexRaysHooks._get_user_lvar_settings(ea)
-        if lvar_settings != self._lvar_settings:
+        if lvar_settings != self._cached_funcs[ea]["lvar_settings"]:
             self._send_packet(evt.UserLvarSettingsEvent(ea, lvar_settings))
-            self._lvar_settings = lvar_settings
+            self._cached_funcs[ea]["lvar_settings"] = lvar_settings
 
     @staticmethod
     def _get_user_numforms(ea):
@@ -719,6 +716,6 @@ class HexRaysHooks(Hooks):
 
     def _send_user_numforms(self, ea):
         numforms = HexRaysHooks._get_user_numforms(ea)
-        if numforms != self._numforms:
+        if numforms != self._cached_funcs[ea]["numforms"]:
             self._send_packet(evt.UserNumformsEvent(ea, numforms))
-            self._numforms = numforms
+            self._cached_funcs[ea]["numforms"] = numforms
