@@ -45,7 +45,7 @@ around the limitations (see below).
 
 Note: this is a fork of [https://github.com/IDArlingTeam/IDArling](IDArlingTeam).
 The IDArlingTeam version supports IDA 7.0+ and Python2/3. Our fork only supports
-IDA 7.4+ and Python 3.
+IDA 7.4+ and Python 3 but has more features.
 
 ## Installation
 
