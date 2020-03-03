@@ -497,7 +497,8 @@ class IDBHooks(Hooks, ida_idp.IDB_Hooks):
         return 0
 
     def item_color_changed(self, ea, color):
-        self._plugin.logger.debug("item_color_changed() not implemented yet")
+        # See #31 on fidgetingbits/IDArling
+        #self._plugin.logger.debug("item_color_changed() not implemented yet")
         return 0
 
     def callee_addr_changed(self, ea, callee):

@@ -21,7 +21,9 @@ import sys
 from PyQt5.QtCore import QCoreApplication, QEvent, QObject, QSocketNotifier
 
 from .packets import Container, Packet, PacketDeferred, Query, Reply
-
+from ..shared.commands import (
+    UpdateLocation,
+)
 
 class PacketEvent(QEvent):
     """
@@ -324,7 +326,9 @@ class ClientSocket(QObject):
             self._logger.warning("Sending packet while disconnected")
             return None
 
-        self._logger.debug("Sending packet: %s" % packet)
+        # UpdateLocation are sent very often so not logging
+        if not isinstance(packet, UpdateLocation):
+            self._logger.debug("Sending packet: %s" % packet)
 
         # Enqueue the packet
         self._outgoing.append(packet)

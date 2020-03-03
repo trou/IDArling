@@ -65,7 +65,7 @@ class Core(Module):
         self._group = None
         self._project = None
         self._database = None
-        self._tick = 0
+        self._tick = -1
         self._users = {}
 
         self._idb_hooks = None
@@ -241,8 +241,8 @@ class Core(Module):
     def load_netnode(self):
         """
         Load data from our custom netnode. Netnodes are the mechanism used by
-        IDA to load and save information into a database. IDArling uses its own
-        netnode to remember which project and database a database belongs to.
+        IDA to load and save information into an idb. IDArling uses its own
+        netnode to remember which group, project and database an idb belongs to.
         """
         node = ida_netnode.netnode(Core.NETNODE_NAME, 0, True)
 
@@ -269,7 +269,9 @@ class Core(Module):
             node.hashset_buf("project", str(self._project))
         if self._database:
             node.hashset_buf("database", str(self._database))
-        if self._tick:
+        # We need the test to be non-zero as we need to reset and save tick=0 
+        # when saving an IDB to a new snapshot
+        if self._tick != -1:
             node.hashset_buf("tick", str(self._tick))
 
         self._plugin.logger.debug(

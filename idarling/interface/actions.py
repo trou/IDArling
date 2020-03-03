@@ -295,7 +295,8 @@ class SaveActionHandler(ActionHandler):
 
     @staticmethod
     def upload_file(plugin, packet):
-        # Save the current database
+        # Save the current database with a tick=0 since it is a new snapshot
+        plugin.core.tick = 0
         plugin.core.save_netnode()
         input_path = ida_loader.get_path(ida_loader.PATH_TYPE_IDB)
         ida_loader.save_database(input_path, 0)
