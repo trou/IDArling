@@ -1120,11 +1120,11 @@ class UserNumformsEvent(HexRaysEvent):
             ol = ida_hexrays.operand_locator_t(_ol["ea"], _ol["opnum"])
             nf = ida_hexrays.number_format_t()
             nf.flags = _nf["flags"]
-            nf.opnum = Event.encode(_nf["opnum"])
-            nf.props = Event.encode(_nf["props"])
+            nf.opnum = _nf["opnum"]
+            nf.props = _nf["props"]
             nf.serial = _nf["serial"]
-            nf.org_nbytes = Event.encode(_nf["org_nbytes"])
-            nf.type_name = Event.encode(_nf["type_name"])
+            nf.org_nbytes = _nf["org_nbytes"]
+            nf.type_name = _nf["type_name"]
             ida_hexrays.user_numforms_insert(numforms, ol, nf)
         ida_hexrays.save_user_numforms(self.ea, numforms)
         HexRaysEvent.refresh_pseudocode_view(self.ea)
