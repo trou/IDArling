@@ -291,6 +291,7 @@ class ServerClient(ClientSocket):
         for user in self.parent().get_users(self):
             self.send_packet(
                 JoinSession(
+                    packet.group,
                     packet.project,
                     packet.database,
                     packet.tick,
