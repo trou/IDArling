@@ -131,9 +131,8 @@ class EventFilter(QObject):
 
     def eventFilter(self, obj, ev):  # noqa: N802
         # XXX - commented because of https://github.com/IDArlingTeam/IDArling/issues/104
-        # because it is better to avoid huge CPU usage and not have the IDArling logo for now
+        # because it is better to avoid huge CPU usage and not have the IDArling logo in the About of IDA Pro
         # So we will need to properly fix it to re-enable the easter egg
-        # Note: I don't see any change myself i.e. there was no IDArling logo before commenting it anyway
         #
         # Is it a QShowEvent on a QDialog named "Dialog"?
         #if (
