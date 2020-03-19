@@ -130,20 +130,25 @@ class EventFilter(QObject):
                 break
 
     def eventFilter(self, obj, ev):  # noqa: N802
+        # XXX - commented because of https://github.com/IDArlingTeam/IDArling/issues/104
+        # because it is better to avoid huge CPU usage and not have the IDArling logo for now
+        # So we will need to properly fix it to re-enable the easter egg
+        # Note: I don't see any change myself i.e. there was no IDArling logo before commenting it anyway
+        #
         # Is it a QShowEvent on a QDialog named "Dialog"?
-        if (
-            ev.__class__ == ev,
-            QShowEvent
-            and obj.__class__ == QDialog
-            and obj.windowTitle() == "About",
-        ):
-            # Find a child QGroupBox
-            for groupBox in obj.children():
-                if groupBox.__class__ == QGroupBox:
-                    # Find a child QLabel with an icon
-                    for label in groupBox.children():
-                        if isinstance(label, QLabel) and label.pixmap():
-                            self._replace_icon(label)
+        #if (
+        #    ev.__class__ == ev,
+        #    QShowEvent
+        #    and obj.__class__ == QDialog
+        #    and obj.windowTitle() == "About",
+        #):
+        #    # Find a child QGroupBox
+        #    for groupBox in obj.children():
+        #        if groupBox.__class__ == QGroupBox:
+        #            # Find a child QLabel with an icon
+        #            for label in groupBox.children():
+        #                if isinstance(label, QLabel) and label.pixmap():
+        #                    self._replace_icon(label)
 
         # Is it a QContextMenuEvent on a QWidget?
         if isinstance(obj, QWidget) and isinstance(ev, QContextMenuEvent):
